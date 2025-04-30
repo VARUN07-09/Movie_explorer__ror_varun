@@ -1,0 +1,371 @@
+openapi: 3.0.1
+info:
+  title: Movie Explorer+ API
+  version: v1
+
+paths:
+  /api/v1/signup:
+    post:
+      summary: User signup
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    email:
+                      type: string
+                    password:
+                      type: string
+                    password_confirmation:
+                      type: string
+                  required:
+                    - name
+                    - email
+                    - password
+                    - password_confirmation
+      responses:
+        '201':
+          description: User created
+        '422':
+          description: Invalid input
+
+  /api/v1/login:
+    post:
+      summary: User login
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              required:
+                - email
+                - password
+      responses:
+        '200':
+          description: Successful login
+        '401':
+          description: Unauthorized
+
+  /api/v1/movies:
+    get:
+      summary: List movies
+      tags:
+        - Movies
+      security:
+        - Bearer: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: genre
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create a movie
+      tags:
+        - Movies
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                genre:
+                  type: string
+                release_year:
+                  type: integer
+                rating:
+                  type: number
+                  format: float
+                director:
+                  type: string
+                duration:
+                  type: string
+                streaming_platform:
+                  type: string
+                main_lead:
+                  type: string
+                description:
+                  type: string
+                premium:
+                  type: boolean
+                poster:
+                  type: string
+                  format: binary
+                banner:
+                  type: string
+                  format: binary
+              required:
+                - title
+                - genre
+                - release_year
+      responses:
+        '201':
+          description: Movie created
+        '401':
+          description: Unauthorized
+        '422':
+          description: Invalid input
+
+  /api/v1/movies/{id}:
+    get:
+      summary: Get a movie
+      tags:
+        - Movies
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+        '404':
+          description: Movie not found
+        '401':
+          description: Unauthorized
+
+    put:
+      summary: Update a movie
+      tags:
+        - Movies
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                genre:
+                  type: string
+                release_year:
+                  type: integer
+                rating:
+                  type: number
+                  format: float
+                director:
+                  type: string
+                duration:
+                  type: string
+                streaming_platform:
+                  type: string
+                main_lead:
+                  type: string
+                description:
+                  type: string
+                premium:
+                  type: boolean
+                poster:
+                  type: string
+                  format: binary
+                banner:
+                  type: string
+                  format: binary
+              required:
+                - title
+                - genre
+                - release_year
+      responses:
+        '200':
+          description: Movie updated
+        '401':
+          description: Unauthorized
+        '404':
+          description: Movie not found
+        '422':
+          description: Invalid input
+
+    delete:
+      summary: Delete a movie
+      tags:
+        - Movies
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Movie deleted successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Movie not found
+
+  /api/v1/subscription_plans:
+    get:
+      summary: Get available subscription plans
+      tags:
+        - Subscription
+      responses:
+        '200':
+          description: A list of available subscription plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    price:
+                      type: number
+                      format: float
+                    duration:
+                      type: integer
+                      description: Duration of the plan in months
+                    plan_type:
+                      type: string
+                      enum:
+                        - free
+                        - basic
+                        - premium
+                    description:
+                      type: string
+        '401':
+          description: Unauthorized access
+
+  /api/v1/user_subscriptions/buy:
+    post:
+      summary: User buys a subscription
+      tags:
+        - Subscription
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plan_id:
+                  type: integer
+                stripe_token:
+                  type: string
+              required:
+                - plan_id
+                - stripe_token
+      responses:
+        '201':
+          description: Subscription created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  plan_id:
+                    type: integer
+                  start_date:
+                    type: string
+                    format: date
+                  end_date:
+                    type: string
+                    format: date
+                  status:
+                    type: string
+        '422':
+          description: Invalid input or payment failure
+        '401':
+          description: Unauthorized access
+
+  /api/v1/user_subscriptions/{id}:
+    get:
+      summary: Get user subscription details
+      tags:
+        - Subscription
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: User subscription ID
+      responses:
+        '200':
+          description: Successful response with subscription details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  plan_id:
+                    type: integer
+                  start_date:
+                    type: string
+                    format: date
+                  end_date:
+                    type: string
+                    format: date
+                  status:
+                    type: string
+        '404':
+          description: Subscription not found
+        '401':
+          description: Unauthorized access
+
+components:
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
