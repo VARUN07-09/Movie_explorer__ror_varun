@@ -4,7 +4,6 @@ module Api
       include Authenticable
       skip_before_action :verify_authenticity_token
       skip_before_action :authenticate_user, only: [:index, :show]
-      
 
       before_action :authorize_admin_or_supervisor!, only: [:create, :update, :destroy]
 
@@ -15,7 +14,7 @@ module Api
         movies = movies.page(params[:page]).per(10)
 
         render json: {
-          movies: movies.map { |m| serialized_movie(m) },
+          movies: ActiveModelSerializers::SerializableResource.new(movies, each_serializer: MovieSerializer),
           meta: {
             current_page: movies.current_page,
             total_pages: movies.total_pages,
@@ -26,44 +25,31 @@ module Api
 
       def show
         movie = Movie.find(params[:id])
-        render json: serialized_movie(movie), status: :ok
+        render json: movie, serializer: MovieSerializer, status: :ok
       rescue ActiveRecord::RecordNotFound
         render json: { error: 'Movie not found' }, status: :not_found
       end
 
       def create
-        movie = Movie.new(movie_params.except(:poster, :banner))
-        
-        # Attach poster if provided
-        movie.poster.attach(params[:poster]) if params[:poster].present?
-        # Attach banner if provided
-        movie.banner.attach(params[:banner]) if params[:banner].present?
+        @movie = Movie.new(movie_params)
+        @movie.poster.attach(params[:poster]) if params[:poster].present?
+        @movie.banner.attach(params[:banner]) if params[:banner].present?
 
-        if movie.save
-          render json: movie, status: :created
-
+        if @movie.save
+          render json: @movie, serializer: MovieSerializer, status: :created
         else
-          render json: { errors: movie.errors.full_messages }, status: :unprocessable_entity
+          render json: { errors: @movie.errors.full_messages }, status: :unprocessable_entity
         end
       end
 
       def update
         movie = Movie.find(params[:id])
 
-        # Update attributes
         if movie.update(movie_params.except(:poster, :banner))
-          # Update poster if provided
-          if params[:poster].present?
-            movie.poster.purge
-            movie.poster.attach(params[:poster])
-          end
-          # Update banner if provided
-          if params[:banner].present?
-            movie.banner.purge
-            movie.banner.attach(params[:banner])
-          end
+          movie.poster.purge && movie.poster.attach(params[:poster]) if params[:poster].present?
+          movie.banner.purge && movie.banner.attach(params[:banner]) if params[:banner].present?
 
-          render json: serialized_movie(movie), status: :ok
+          render json: movie, serializer: MovieSerializer, status: :ok
         else
           render json: { errors: movie.errors.full_messages }, status: :unprocessable_entity
         end
@@ -91,30 +77,10 @@ module Api
       end
 
       def movie_params
-        # Remove the wrapping 'movie' key if you want to accept parameters directly at the root level
-        params.permit(:title, :genre, :release_year, :rating, :description, :main_lead, :banner, :director, :streaming_platform, :duration, :premium, :poster)
+        params.permit(:title, :genre, :release_year, :rating, :description,
+                      :main_lead, :director, :streaming_platform, :duration,
+                      :premium, :poster, :banner)
       end
-
-      def serialized_movie(movie)
-        {
-          id: movie.id,
-          title: movie.title,
-          genre: movie.genre,
-          release_year: movie.release_year,
-          rating: movie.rating,
-          description: movie.description,
-          main_lead: movie.main_lead,
-          director: movie.director,
-          streaming_platform: movie.streaming_platform,
-          duration: movie.duration,
-          premium: movie.premium,
-          poster_url: movie.poster.attached? ? url_for(movie.poster) : nil,
-          banner_url: movie.banner.attached? ? url_for(movie.banner) : nil,
-          created_at: movie.created_at,
-          updated_at: movie.updated_at
-        }
-      end
-      
     end
   end
 end

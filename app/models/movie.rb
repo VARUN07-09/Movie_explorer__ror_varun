@@ -7,6 +7,7 @@ class Movie < ApplicationRecord
   validates :rating, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 10 }, allow_nil: true
 
   has_one_attached :poster
+  has_one_attached :banner
   validates :poster, content_type: ['image/png', 'image/jpeg'], size: { less_than: 5.megabytes }
 
   def poster_url

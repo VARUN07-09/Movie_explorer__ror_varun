@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_04_30_123657) do
+ActiveRecord::Schema[7.1].define(version: 2025_05_01_081314) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -86,30 +86,31 @@ ActiveRecord::Schema[7.1].define(version: 2025_04_30_123657) do
 
   create_table "subscription_plans", force: :cascade do |t|
     t.string "name"
-    t.decimal "price"
-    t.integer "duration"
-    t.integer "plan_type"
+    t.float "price"
+    t.integer "duration_months"
+    t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "plan_type"
   end
 
   create_table "subscriptions", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.integer "plan_type", default: 0, null: false
     t.integer "status", default: 0, null: false
+    t.datetime "start_date"
+    t.datetime "end_date"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.date "start_date"
-    t.date "end_date"
     t.index ["user_id"], name: "index_subscriptions_on_user_id"
   end
 
   create_table "user_subscriptions", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "subscription_plan_id", null: false
-    t.date "start_date"
-    t.date "end_date"
-    t.integer "status"
+    t.datetime "start_date"
+    t.datetime "end_date"
+    t.integer "status", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["subscription_plan_id"], name: "index_user_subscriptions_on_subscription_plan_id"

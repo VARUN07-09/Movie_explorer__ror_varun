@@ -40,4 +40,7 @@ gem 'inherited_resources'
 gem "devise", "~> 4.9"
 gem "dotenv"
 gem 'active_model_serializers'
-gem 'jsonapi-serializer'
+
+group :test do
+  gem 'shoulda-matchers', '~> 5.0'
+end
