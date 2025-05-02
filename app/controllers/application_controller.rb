@@ -1,5 +1,5 @@
 class ApplicationController < ActionController::Base
-    protect_from_forgery with: :exception
+  protect_from_forgery with: :null_session
   
     private
   
@@ -17,7 +17,7 @@ class ApplicationController < ActionController::Base
     #   user = User.find_by(id: user_id)
     #   return user if user&.admin?
     # end
-  
+    
     # # Overriding the default behavior of `current_user` in ActiveAdmin.
     # def current_user
     #   current_admin_user # In ActiveAdmin, we want to use the admin version of the user

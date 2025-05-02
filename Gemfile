@@ -15,7 +15,7 @@ gem "activestorage", require: "active_storage/engine"
 gem 'active_storage_validations', '~> 1.1'
 gem 'rswag', '~> 2.13'
 gem 'rack-cors', '~> 2.0'
-gem 'stripe', '~> 10.0'
+# gem 'stripe', '~> 10.0'
 gem 'sassc', '~> 2.4' # For ActiveAdmin styles
 gem 'sprockets-rails', '~> 3.5' # Single version for asset pipeline
 gem 'fcm', '~> 0.0.6'
@@ -46,3 +46,4 @@ group :test do
 end
 gem 'cloudinary'
 
+gem 'stripe'

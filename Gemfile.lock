@@ -400,7 +400,7 @@ DEPENDENCIES
   shoulda-matchers (~> 5.0)
   spring
   sprockets-rails (~> 3.5)
-  stripe (~> 10.0)
+  stripe
   tzinfo-data
 
 RUBY VERSION

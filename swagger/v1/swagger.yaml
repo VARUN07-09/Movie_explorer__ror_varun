@@ -2,6 +2,7 @@ openapi: 3.0.1
 info:
   title: Movie Explorer+ API
   version: v1
+  description: API for managing movies, subscriptions, and user authentication.
 
 paths:
   /api/v1/signup:
@@ -21,12 +22,17 @@ paths:
                   properties:
                     name:
                       type: string
+                      description: Full name of the user
                     email:
                       type: string
+                      format: email
+                      description: User's email address
                     password:
                       type: string
+                      description: User's password
                     password_confirmation:
                       type: string
+                      description: Confirmation of the user's password
                   required:
                     - name
                     - email
@@ -34,7 +40,7 @@ paths:
                     - password_confirmation
       responses:
         '201':
-          description: User created
+          description: User created successfully
         '422':
           description: Invalid input
 
@@ -52,14 +58,25 @@ paths:
               properties:
                 email:
                   type: string
+                  format: email
+                  description: User's email address
                 password:
                   type: string
+                  description: User's password
               required:
                 - email
                 - password
       responses:
         '200':
           description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT token to authenticate subsequent requests
         '401':
           description: Unauthorized
 
@@ -75,17 +92,20 @@ paths:
           in: query
           schema:
             type: integer
+            description: Page number for pagination
         - name: search
           in: query
           schema:
             type: string
+            description: Search term for movies
         - name: genre
           in: query
           schema:
             type: string
+            description: Genre of the movie
       responses:
         '200':
-          description: Successful response
+          description: Successful response with movie list
         '401':
           description: Unauthorized
 
@@ -135,7 +155,7 @@ paths:
                 - release_year
       responses:
         '201':
-          description: Movie created
+          description: Movie created successfully
         '401':
           description: Unauthorized
         '422':
@@ -156,7 +176,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Successful response
+          description: Successful response with movie details
         '404':
           description: Movie not found
         '401':
@@ -214,7 +234,7 @@ paths:
                 - release_year
       responses:
         '200':
-          description: Movie updated
+          description: Movie updated successfully
         '401':
           description: Unauthorized
         '404':
@@ -294,8 +314,10 @@ paths:
               properties:
                 plan_id:
                   type: integer
+                  description: The ID of the subscription plan the user wants to purchase
                 stripe_token:
                   type: string
+                  description: The Stripe token generated on the frontend to process the payment (sent from Stripe.js)
               required:
                 - plan_id
                 - stripe_token
