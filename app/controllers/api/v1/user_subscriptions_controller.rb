@@ -42,7 +42,7 @@ class Api::V1::UserSubscriptionsController < ApplicationController
         user: user,
         subscription_plan: subscription_plan,
         start_date: Date.today,
-        end_date: Date.today + subscription_plan.duration.months,
+        end_date: Date.today + subscription_plan.duration_months,
         status: :active
       )
   

@@ -6,11 +6,11 @@ class SubscriptionPlan < ApplicationRecord
   
     validates :name, presence: true
     validates :price, presence: true, numericality: { greater_than_or_equal_to: 0 }
-    validates :duration, presence: true, numericality: { only_integer: true, greater_than: 0 }
+    validates :duration_months, presence: true, numericality: { only_integer: true, greater_than: 0 }
   
     # Allow searching on specific attributes
     def self.ransackable_attributes(auth_object = nil)
-      ["created_at", "duration", "id", "name", "plan_type", "price", "updated_at"]
+      ["created_at", "duration_months", "id", "name", "plan_type", "price", "updated_at"]
     end
   
     # Allow searching on the associated 'user_subscriptions'

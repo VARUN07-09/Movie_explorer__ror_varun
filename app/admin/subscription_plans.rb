@@ -1,10 +1,10 @@
 ActiveAdmin.register SubscriptionPlan do
-  permit_params :name, :price, :duration, :plan_type
-
+  permit_params :name, :price, :duration_months, :plan_type
   filter :name
   filter :price
   filter :duration_months
   filter :plan_type
+  filter :created_at
 
   form do |f|
     f.inputs do
