@@ -36,6 +36,7 @@ module Api
         @movie.banner.attach(params[:banner]) if params[:banner].present?
 
         if @movie.save
+          send_movie_creation_notification(@movie) # Send notification to all users
           render json: @movie, serializer: MovieSerializer, status: :created
         else
           render json: { errors: @movie.errors.full_messages }, status: :unprocessable_entity
@@ -69,6 +70,36 @@ module Api
       end
 
       private
+
+      def send_movie_creation_notification(movie)
+        # Fetch all users with an FCM token
+        users_with_fcm_token = User.where.not(fcm_token: nil)
+
+        # Notification message
+        message = {
+          notification: {
+            title: "New Movie Released!",
+            body: "Check out the new movie: #{movie.title}!"
+          },
+          data: {
+            movie_id: movie.id.to_s,
+            title: movie.title,
+            genre: movie.genre
+          }
+        }
+
+        # Send notification to each user with an FCM token
+        users_with_fcm_token.each do |user|
+          send_fcm_notification(user.fcm_token, message)
+        end
+      end
+
+      def send_fcm_notification(fcm_token, message)
+        # Initialize FCM with server key
+        fcm = FCM.new(ENV['FCM_SERVER_KEY']) # Add your Firebase server key here
+        response = fcm.send([fcm_token], message)
+        Rails.logger.info "FCM Notification Response: #{response}"
+      end
 
       def authorize_admin_or_supervisor!
         unless current_user&.admin? || current_user&.supervisor?

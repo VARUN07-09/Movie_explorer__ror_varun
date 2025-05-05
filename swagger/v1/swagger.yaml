@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: Movie Explorer+ API
   version: v1
-  description: API for managing movies, subscriptions, and user authentication.
+  description: API for managing movies, subscriptions, user authentication, and notifications.
 
 paths:
   /api/v1/signup:
@@ -382,6 +382,31 @@ paths:
                     type: string
         '404':
           description: Subscription not found
+        '401':
+          description: Unauthorized access
+
+  /api/v1/auth/notifications/preferences:
+    patch:
+      summary: Update user notification preferences
+      tags:
+        - Notifications
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notify_on_new_movie:
+                  type: boolean
+                  description: Whether the user wants to receive notifications when a new movie is added
+              required:
+                - notify_on_new_movie
+      responses:
+        '200':
+          description: Notification preferences updated successfully
         '401':
           description: Unauthorized access
 

@@ -117,19 +117,29 @@ class Api::V1::UserSubscriptionsController < ApplicationController
   def authorize_request
     header = request.headers['Authorization']
     token = header.split(' ').last if header
-  
-    Rails.logger.debug("Authorization header: #{header}")
-    Rails.logger.debug("Token: #{token}")
+    Rails.logger.debug "Authorization header: #{header}"
+    Rails.logger.debug "Token: #{token}"
   
     begin
-      decoded = JsonWebToken.decode(token)  # Assuming you're using a JsonWebToken class
-      @current_user = User.find(decoded['user_id'])
-      Rails.logger.debug("User found: #{@current_user}")
-    rescue JWT::DecodeError
-      render json: { error: 'Invalid token' }, status: :unauthorized
-    rescue ActiveRecord::RecordNotFound
-      render json: { error: 'User not found' }, status: :unauthorized
+      decoded = JWT.decode(token, Rails.application.secrets.secret_key_base)[0]
+      Rails.logger.debug "Decoded payload: #{decoded.inspect}"
+  
+      user_id = decoded['user_id']
+      @current_user = User.find_by(id: user_id)
+  
+      if @current_user.nil?
+        Rails.logger.debug "User not found with ID #{user_id}"
+        render json: { errors: 'User not found' }, status: :unauthorized
+      else
+        Rails.logger.debug "Current user: #{@current_user.email}"
+      end
+  
+    rescue JWT::DecodeError => e
+      Rails.logger.debug "JWT DecodeError: #{e.message}"
+      render json: { errors: 'Invalid token' }, status: :unauthorized
     end
   end
+  
+  
   
 end

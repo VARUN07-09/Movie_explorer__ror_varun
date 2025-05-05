@@ -386,7 +386,8 @@ DEPENDENCIES
   factory_bot_rails (~> 6.4)
   faker (~> 3.2)
   faraday (~> 2.9)
-  fcm (~> 0.0.6)
+  fcm
+  httparty
   inherited_resources
   jwt (~> 2.8)
   kaminari (~> 1.2)

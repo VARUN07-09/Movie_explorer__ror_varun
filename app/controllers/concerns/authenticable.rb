@@ -1,24 +1,20 @@
-# app/controllers/concerns/authenticable.rb
-module Authenticable
-    extend ActiveSupport::Concern
-  
-    included do
-      before_action :authenticate_user
-    end
-  
-    private
-  
-    def authenticate_user
-      token = request.headers['Authorization']&.split(' ')&.last
-      begin
-        decoded = JWT.decode(token, 'your_secret_key', true, algorithm: 'HS256')
-        @current_user = User.find(decoded[0]['user_id'])
-      rescue JWT::DecodeError, ActiveRecord::RecordNotFound
-        render json: { error: 'Unauthorized' }, status: :unauthorized
-      end
-    end
-  
-    def current_user
-      @current_user
-    end
+# app/controllers/concerns/authenticatable.rb
+module Authenticatable
+  extend ActiveSupport::Concern
+
+  included do
+    before_action :authenticate_with_token!
   end
+
+  def authenticate_with_token!
+    token = request.headers['Authorization']&.split(' ')&.last
+    payload = JsonWebToken.decode(token)
+    @current_user = User.find(payload['user_id'])
+  rescue JWT::DecodeError, ActiveRecord::RecordNotFound
+    render json: { error: 'Unauthorized' }, status: :unauthorized
+  end
+
+  def current_user
+    @current_user
+  end
+end
