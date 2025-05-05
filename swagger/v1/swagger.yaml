@@ -92,17 +92,28 @@ paths:
           in: query
           schema:
             type: integer
-            description: Page number for pagination
+          description: Page number for pagination
         - name: search
           in: query
           schema:
             type: string
-            description: Search term for movies
+          description: Search term for movies
         - name: genre
           in: query
           schema:
             type: string
-            description: Genre of the movie
+          description: Genre of the movie
+        - name: release_year
+          in: query
+          schema:
+            type: integer
+          description: Filter movies by release year
+        - name: rating
+          in: query
+          schema:
+            type: number
+            format: float
+          description: Filter movies by rating
       responses:
         '200':
           description: Successful response with movie list

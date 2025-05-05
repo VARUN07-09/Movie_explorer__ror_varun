@@ -1,17 +1,29 @@
-# app/controllers/concerns/authenticatable.rb
-module Authenticatable
+module Authenticable
   extend ActiveSupport::Concern
 
   included do
-    before_action :authenticate_with_token!
+    before_action :authenticate_user, except: [:index, :show] # Default authentication for all actions except index and show
   end
 
-  def authenticate_with_token!
+  private
+
+  def authenticate_user
     token = request.headers['Authorization']&.split(' ')&.last
-    payload = JsonWebToken.decode(token)
-    @current_user = User.find(payload['user_id'])
-  rescue JWT::DecodeError, ActiveRecord::RecordNotFound
-    render json: { error: 'Unauthorized' }, status: :unauthorized
+    unless token
+      render json: { error: 'Token missing' }, status: :unauthorized
+      return
+    end
+
+    begin
+      decoded = JWT.decode(token, Rails.application.secret_key_base, true, algorithm: 'HS256')
+      @current_user_id = decoded.first['user_id']
+      @current_user = User.find_by(id: @current_user_id)
+      unless @current_user
+        render json: { error: 'User not found' }, status: :unauthorized
+      end
+    rescue JWT::DecodeError
+      render json: { error: 'Invalid token' }, status: :unauthorized
+    end
   end
 
   def current_user

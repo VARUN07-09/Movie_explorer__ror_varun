@@ -2,8 +2,8 @@ module Api
   module V1
     class AuthController < ApplicationController
       skip_before_action :verify_authenticity_token
-      before_action :authenticate_with_token!
-      before_action :authenticate_user!  # Ensure that the user is authenticated before accessing these actions
+      before_action :authenticate_with_token!, except: [:login, :signup]
+      before_action :authenticate_user!, except: [:login, :signup]  # Ensure that the user is authenticated before accessing these actions
 
       # Update FCM token
       def update_fcm_token
@@ -25,7 +25,7 @@ module Api
         user = User.new(user_params)
         if user.save
           token = encode_token({ user_id: user.id })
-          render json: { user: user.as_json(only: [:id, :name, :email, :role]), token: token }, status: :created
+          render json: { user: user.as_json(only: [:id, :name, :email, :role]) }, status: :created
         else
           render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
         end
