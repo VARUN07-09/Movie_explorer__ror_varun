@@ -41,8 +41,33 @@ paths:
       responses:
         '201':
           description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  email:
+                    type: string
+                    format: email
+                required:
+                  - id
+                  - name
+                  - email
         '422':
           description: Invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: string
 
   /api/v1/login:
     post:
@@ -77,8 +102,32 @@ paths:
                   token:
                     type: string
                     description: JWT token to authenticate subsequent requests
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      email:
+                        type: string
+                        format: email
+                    required:
+                      - id
+                      - name
+                      - email
+                required:
+                  - token
+                  - user
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 
   /api/v1/movies:
     get:
@@ -97,12 +146,12 @@ paths:
           in: query
           schema:
             type: string
-          description: Search term for movies
+          description: Search term for movie titles
         - name: genre
           in: query
           schema:
             type: string
-          description: Genre of the movie
+          description: Filter movies by genre
         - name: release_year
           in: query
           schema:
@@ -117,8 +166,70 @@ paths:
       responses:
         '200':
           description: Successful response with movie list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  movies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        title:
+                          type: string
+                        genre:
+                          type: string
+                        release_year:
+                          type: integer
+                        rating:
+                          type: number
+                          format: float
+                        director:
+                          type: string
+                        duration:
+                          type: string
+                        streaming_platform:
+                          type: string
+                        main_lead:
+                          type: string
+                        description:
+                          type: string
+                        premium:
+                          type: boolean
+                      required:
+                        - id
+                        - title
+                        - genre
+                        - release_year
+                        - rating
+                    meta:
+                      type: object
+                      properties:
+                        current_page:
+                          type: integer
+                        total_pages:
+                          type: integer
+                        total_count:
+                          type: integer
+                      required:
+                        - current_page
+                        - total_pages
+                        - total_count
+                required:
+                  - movies
+                  - meta
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 
     post:
       summary: Create a movie
@@ -167,10 +278,59 @@ paths:
       responses:
         '201':
           description: Movie created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  title:
+                    type: string
+                  genre:
+                    type: string
+                  release_year:
+                    type: integer
+                  rating:
+                    type: number
+                    format: float
+                  director:
+                    type: string
+                  duration:
+                    type: string
+                  streaming_platform:
+                    type: string
+                  main_lead:
+                    type: string
+                  description:
+                    type: string
+                  premium:
+                    type: boolean
+                required:
+                  - id
+                  - title
+                  - genre
+                  - release_year
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
         '422':
           description: Invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: string
 
   /api/v1/movies/{id}:
     get:
@@ -188,10 +348,58 @@ paths:
       responses:
         '200':
           description: Successful response with movie details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  title:
+                    type: string
+                  genre:
+                    type: string
+                  release_year:
+                    type: integer
+                  rating:
+                    type: number
+                    format: float
+                  director:
+                    type: string
+                  duration:
+                    type: string
+                  streaming_platform:
+                    type: string
+                  main_lead:
+                    type: string
+                  description:
+                    type: string
+                  premium:
+                    type: boolean
+                required:
+                  - id
+                  - title
+                  - genre
+                  - release_year
+                  - rating
         '404':
           description: Movie not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 
     put:
       summary: Update a movie
@@ -246,12 +454,68 @@ paths:
       responses:
         '200':
           description: Movie updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  title:
+                    type: string
+                  genre:
+                    type: string
+                  release_year:
+                    type: integer
+                  rating:
+                    type: number
+                    format: float
+                  director:
+                    type: string
+                  duration:
+                    type: string
+                  streaming_platform:
+                    type: string
+                  main_lead:
+                    type: string
+                  description:
+                    type: string
+                  premium:
+                    type: boolean
+                required:
+                  - id
+                  - title
+                  - genre
+                  - release_year
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
         '404':
           description: Movie not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
         '422':
           description: Invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: string
 
     delete:
       summary: Delete a movie
@@ -268,10 +532,31 @@ paths:
       responses:
         '200':
           description: Movie deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
         '404':
           description: Movie not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 
   /api/v1/subscription_plans:
     get:
@@ -306,8 +591,21 @@ paths:
                         - premium
                     description:
                       type: string
+                  required:
+                    - id
+                    - name
+                    - price
+                    - duration
+                    - plan_type
         '401':
           description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 
   /api/v1/user_subscriptions/buy:
     post:
@@ -352,10 +650,32 @@ paths:
                     format: date
                   status:
                     type: string
+                required:
+                  - id
+                  - plan_id
+                  - start_date
+                  - end_date
+                  - status
         '422':
           description: Invalid input or payment failure
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: string
         '401':
           description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 
   /api/v1/user_subscriptions/{id}:
     get:
@@ -391,10 +711,30 @@ paths:
                     format: date
                   status:
                     type: string
+                required:
+                  - id
+                  - plan_id
+                  - start_date
+                  - end_date
+                  - status
         '404':
           description: Subscription not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
         '401':
           description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 
   /api/v1/auth/notifications/preferences:
     patch:
@@ -418,8 +758,22 @@ paths:
       responses:
         '200':
           description: Notification preferences updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
         '401':
           description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 
 components:
   securitySchemes:
