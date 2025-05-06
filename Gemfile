@@ -49,3 +49,6 @@ gem 'cloudinary'
 gem 'stripe'
 gem 'fcm'
 gem 'httparty'
+gem 'googleauth'
+   
+gem 'simplecov', '0.17.0'

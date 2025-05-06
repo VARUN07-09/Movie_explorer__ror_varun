@@ -11,7 +11,7 @@ module Api
         movies = Movie.all
         movies = movies.where('title ILIKE ?', "%#{params[:search]}%") if params[:search].present?
         movies = movies.where(genre: params[:genre]) if params[:genre].present?
-        movies = movies.where(rating: params[:rating]) if params[:rating].present?
+        movies = movies.where('rating > ?', params[:rating]) if params[:rating].present?
         movies = movies.where('extract(year from release_date) = ?', params[:release_year]) if params[:release_year].present?
         movies = movies.page(params[:page]).per(10)
       
@@ -38,7 +38,7 @@ module Api
         @movie.banner.attach(params[:banner]) if params[:banner].present?
 
         if @movie.save
-          send_movie_creation_notification(@movie)
+          send_new_movie_notification(@movie)
           render json: @movie, serializer: MovieSerializer, status: :created
         else
           render json: { errors: @movie.errors.full_messages }, status: :unprocessable_entity
@@ -84,28 +84,22 @@ module Api
 
       private
 
-      def send_movie_creation_notification(movie)
-        users_with_fcm_token = User.where.not(fcm_token: nil)
-        message = {
-          notification: {
-            title: "New Movie Released!",
-            body: "Check out the new movie: #{movie.title}!"
-          },
-          data: {
-            movie_id: movie.id.to_s,
-            title: movie.title,
-            genre: movie.genre
-          }
-        }
-        users_with_fcm_token.each do |user|
-          send_fcm_notification(user.fcm_token, message)
+      def send_new_movie_notification(movie)
+        users = User.where(notifications_enabled: true).where.not(device_token: nil)
+        return if users.empty?
+        device_tokens = users.pluck(:device_token)
+        begin
+          fcm_service = FcmService.new
+          response = fcm_service.send_notification(device_tokens, "New Movie Added!", "#{movie.title} has been added to the Movie Explorer collection.", { movie_id: movie.id.to_s })
+          Rails.logger.info("FCM Response: #{response}")
+          if response[:status_code] == 200
+            Rails.logger.info("FCM Response: #{response}")
+          else
+            Rails.logger.error("FCM Error: #{response[:body]}")
+          end
+        rescue StandardError => e
+          Rails.logger.error("FCM Notification Failed: #{e.message}")
         end
-      end
-
-      def send_fcm_notification(fcm_token, message)
-        fcm = FCM.new(ENV['FCM_SERVER_KEY'])
-        response = fcm.send([fcm_token], message)
-        Rails.logger.info "FCM Notification Response: #{response}"
       end
 
       def authorize_admin_or_supervisor!
