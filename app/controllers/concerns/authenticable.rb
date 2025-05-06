@@ -2,27 +2,30 @@ module Authenticable
   extend ActiveSupport::Concern
 
   included do
-    before_action :authenticate_user, except: [:index, :show] # Default authentication for all actions except index and show
+    before_action :authenticate_user, except: [:index, :show]
   end
 
   private
 
   def authenticate_user
-    token = request.headers['Authorization']&.split(' ')&.last
-    unless token
-      render json: { error: 'Token missing' }, status: :unauthorized
+    auth_header = request.headers['Authorization']
+    unless auth_header&.match?(/\ABearer\s/)
+      render json: { error: 'Authorization header missing or invalid' }, status: :unauthorized
       return
     end
 
+    token = auth_header.split(' ').last
     begin
       decoded = JWT.decode(token, Rails.application.secret_key_base, true, algorithm: 'HS256')
-      @current_user_id = decoded.first['user_id']
-      @current_user = User.find_by(id: @current_user_id)
+      @current_user = User.find_by(id: decoded.first['user_id'])
       unless @current_user
         render json: { error: 'User not found' }, status: :unauthorized
+        return
       end
+    rescue JWT::ExpiredSignature
+      render json: { error: 'Token has expired' }, status: :unauthorized
     rescue JWT::DecodeError
-      render json: { error: 'Invalid token' }, status: :unauthorized
+     Hum render json: { error: 'Invalid token' }, status: :unauthorized
     end
   end
 

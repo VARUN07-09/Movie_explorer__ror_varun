@@ -47,9 +47,22 @@ module Api
 
       def update
         movie = Movie.find(params[:id])
+        Rails.logger.info "Params received: #{params.inspect}" # Debug params
         if movie.update(movie_params.except(:poster, :banner))
-          movie.poster.purge && movie.poster.attach(params[:poster]) if params[:poster].present?
-          movie.banner.purge && movie.banner.attach(params[:banner]) if params[:banner].present?
+          if params[:poster].present?
+            Rails.logger.info "Purging and attaching new poster"
+            movie.poster.purge
+            movie.poster.attach(params[:poster])
+            Rails.logger.info "Poster attached: #{movie.poster.attached?}, Key: #{movie.poster.key}"
+          end
+          if params[:banner].present?
+            Rails.logger.info "Purging and attaching new banner"
+            movie.banner.purge
+            movie.banner.attach(params[:banner])
+            Rails.logger.info "Banner attached: #{movie.banner.attached?}, Key: #{movie.banner.key}"
+          end
+          movie.reload # Reload to ensure attachment sync
+          Rails.logger.info "Poster URL: #{movie.poster_url}"
           render json: movie, serializer: MovieSerializer, status: :ok
         else
           render json: { errors: movie.errors.full_messages }, status: :unprocessable_entity

@@ -16,8 +16,12 @@ module Api
 
       # Update notification preferences (e.g., turn notifications on/off)
       def update_notification_preferences
-        current_user.update!(notification_params)
-        render json: { success: true }
+        # Assuming a User model with notification preferences
+        if current_user.update(notify_on_new_movie: params[:auth][:notify_on_new_movie])
+          render json: { status: 'success', notify_on_new_movie: current_user.notify_on_new_movie }, status: :ok
+        else
+          render json: { errors: current_user.errors.full_messages }, status: :unprocessable_entity
+        end
       end
 
       # User signup action

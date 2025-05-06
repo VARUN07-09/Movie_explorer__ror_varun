@@ -199,12 +199,19 @@ paths:
                           type: string
                         premium:
                           type: boolean
+                        poster_url:
+                          type: string
+                          nullable: true
+                          description: URL of the movie poster (Cloudinary)
+                        banner_url:
+                          type: string
+                          nullable: true
+                          description: URL of the movie banner (Cloudinary)
                       required:
                         - id
                         - title
                         - genre
                         - release_year
-                        - rating
                     meta:
                       type: object
                       properties:
@@ -246,31 +253,43 @@ paths:
               properties:
                 title:
                   type: string
+                  description: Title of the movie
                 genre:
                   type: string
+                  description: Genre of the movie
                 release_year:
                   type: integer
+                  description: Release year of the movie
                 rating:
                   type: number
                   format: float
+                  description: Movie rating (0-10)
                 director:
                   type: string
+                  description: Director of the movie
                 duration:
                   type: string
+                  description: Duration of the movie (e.g., '2h 30m')
                 streaming_platform:
                   type: string
+                  description: Streaming platform for the movie
                 main_lead:
                   type: string
+                  description: Main lead actor/actress
                 description:
                   type: string
+                  description: Movie description
                 premium:
                   type: boolean
+                  description: Whether the movie is premium content
                 poster:
                   type: string
                   format: binary
+                  description: Movie poster image file (PNG/JPEG, max 5MB)
                 banner:
                   type: string
                   format: binary
+                  description: Movie banner image file (PNG/JPEG, max 5MB)
               required:
                 - title
                 - genre
@@ -306,6 +325,14 @@ paths:
                     type: string
                   premium:
                     type: boolean
+                  poster_url:
+                    type: string
+                    nullable: true
+                    description: URL of the movie poster (Cloudinary)
+                  banner_url:
+                    type: string
+                    nullable: true
+                    description: URL of the movie banner (Cloudinary)
                 required:
                   - id
                   - title
@@ -376,12 +403,19 @@ paths:
                     type: string
                   premium:
                     type: boolean
+                  poster_url:
+                    type: string
+                    nullable: true
+                    description: URL of the movie poster (Cloudinary)
+                  banner_url:
+                    type: string
+                    nullable: true
+                    description: URL of the movie banner (Cloudinary)
                 required:
                   - id
                   - title
                   - genre
                   - release_year
-                  - rating
         '404':
           description: Movie not found
           content:
@@ -422,31 +456,43 @@ paths:
               properties:
                 title:
                   type: string
+                  description: Title of the movie
                 genre:
                   type: string
+                  description: Genre of the movie
                 release_year:
                   type: integer
+                  description: Release year of the movie
                 rating:
                   type: number
                   format: float
+                  description: Movie rating (0-10)
                 director:
                   type: string
+                  description: Director of the movie
                 duration:
                   type: string
+                  description: Duration of the movie (e.g., '2h 30m')
                 streaming_platform:
                   type: string
+                  description: Streaming platform for the movie
                 main_lead:
                   type: string
+                  description: Main lead actor/actress
                 description:
                   type: string
+                  description: Movie description
                 premium:
                   type: boolean
+                  description: Whether the movie is premium content
                 poster:
                   type: string
                   format: binary
+                  description: Movie poster image file (PNG/JPEG, max 5MB)
                 banner:
                   type: string
                   format: binary
+                  description: Movie banner image file (PNG/JPEG, max 5MB)
               required:
                 - title
                 - genre
@@ -482,6 +528,14 @@ paths:
                     type: string
                   premium:
                     type: boolean
+                  poster_url:
+                    type: string
+                    nullable: true
+                    description: URL of the movie poster (Cloudinary)
+                  banner_url:
+                    type: string
+                    nullable: true
+                    description: URL of the movie banner (Cloudinary)
                 required:
                   - id
                   - title
