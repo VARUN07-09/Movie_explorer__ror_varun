@@ -63,6 +63,12 @@ paths:
                       - name
                       - email
                       - role
+                  token:
+                    type: string
+                    description: JWT token for authentication
+                required:
+                  - user
+                  - token
         '422':
           description: Invalid input
           content:
@@ -140,6 +146,132 @@ paths:
                 properties:
                   error:
                     type: string
+
+  /api/v1/user:
+    get:
+      summary: Get user details
+      description: Fetches details of the authenticated user, including profile picture if available.
+      tags:
+        - Authentication
+      security:
+        - Bearer: []
+      responses:
+        '200':
+          description: Successful response with user details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      email:
+                        type: string
+                        format: email
+                      role:
+                        type: string
+                      profile_picture_url:
+                        type: string
+                        nullable: true
+                        description: URL of the user's profile picture (Cloudinary)
+                    required:
+                      - id
+                      - name
+                      - email
+                      - role
+                required:
+                  - user
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /api/v1/update_profile_picture:
+    post:
+      summary: Upload user profile picture
+      description: Allows the authenticated user to upload a profile picture.
+      tags:
+        - Authentication
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                profile_picture:
+                  type: string
+                  format: binary
+                  description: Profile picture image file (PNG/JPEG, max 5MB)
+              required:
+                - profile_picture
+      responses:
+        '200':
+          description: Profile picture updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      email:
+                        type: string
+                        format: email
+                      role:
+                        type: string
+                      profile_picture_url:
+                        type: string
+                        nullable: true
+                        description: URL of the user's profile picture (Cloudinary)
+                    required:
+                      - id
+                      - name
+                      - email
+                      - role
+                  message:
+                    type: string
+                    description: Confirmation message
+                required:
+                  - user
+                  - message
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '422':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: string
 
   /api/v1/update_device_token:
     post:

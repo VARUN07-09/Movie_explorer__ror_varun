@@ -4,6 +4,35 @@ module Api
       skip_before_action :verify_authenticity_token
       before_action :authorize_request, except: [:login, :signup]
 
+      def show
+        render json: {
+          user: @current_user.as_json(
+            only: [:id, :name, :email, :role],
+            methods: [:profile_picture_url]
+          )
+        }, status: :ok
+      end
+
+      def update_profile_picture
+        if params[:profile_picture].present?
+          @current_user.profile_picture.purge if @current_user.profile_picture.attached?
+          @current_user.profile_picture.attach(params[:profile_picture])
+          if @current_user.save
+            render json: {
+              user: @current_user.as_json(
+                only: [:id, :name, :email, :role],
+                methods: [:profile_picture_url]
+              ),
+              message: "Profile picture updated successfully"
+            }, status: :ok
+          else
+            render json: { errors: @current_user.errors.full_messages }, status: :unprocessable_entity
+          end
+        else
+          render json: { errors: ["Profile picture file is required"] }, status: :unprocessable_entity
+        end
+      end
+
       def toggle_notifications
         new_status = params[:notifications_enabled] == "true" || params[:notifications_enabled] == true
         if @current_user.update(notifications_enabled: new_status)

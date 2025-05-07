@@ -11,6 +11,8 @@ Rails.application.routes.draw do
       post 'signup', to: 'auth#signup'
       post 'login', to: 'auth#login'
       post 'update_device_token', to: 'auth#update_device_token'
+      get 'user', to: 'auth#show'
+      post 'update_profile_picture', to: 'auth#update_profile_picture'
       post 'toggle_notifications', to: 'auth#toggle_notifications'
       post 'create_stripe_customer', to: 'auth#create_stripe_customer'
 
