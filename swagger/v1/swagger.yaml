@@ -144,6 +144,7 @@ paths:
   /api/v1/update_device_token:
     post:
       summary: Update user's device token for push notifications
+      description: Updates the user's FCM device token to enable push notifications. Required for sending notifications when notifications_enabled is true.
       tags:
         - Notifications
       security:
@@ -158,19 +159,8 @@ paths:
                 device_token:
                   type: string
                   description: FCM (Firebase Cloud Messaging) token for push notifications
-                fcm_token:
-                  type: string
-                  description: Alternative key for FCM token
-                auth:
-                  type: object
-                  properties:
-                    fcm_token:
-                      type: string
-                      description: Nested FCM token (for legacy clients)
-              oneOf:
-                - required: [device_token]
-                - required: [fcm_token]
-                - required: [auth]
+              required:
+                - device_token
       responses:
         '200':
           description: Device token updated successfully
@@ -206,6 +196,7 @@ paths:
   /api/v1/toggle_notifications:
     post:
       summary: Toggle user notification preferences
+      description: Enable or disable push notifications for the user. If enabled, the user will receive notifications for new movies (requires device_token to be set).
       tags:
         - Notifications
       security:
@@ -219,20 +210,9 @@ paths:
               properties:
                 notifications_enabled:
                   type: boolean
-                  description: Whether the user wants to receive push notifications
-                notify_on_new_movie:
-                  type: boolean
-                  description: Legacy parameter for enabling/disabling new movie notifications
-                auth:
-                  type: object
-                  properties:
-                    notify_on_new_movie:
-                      type: boolean
-                      description: Nested legacy parameter for new movie notifications
-              oneOf:
-                - required: [notifications_enabled]
-                - required: [notify_on_new_movie]
-                - required: [auth]
+                  description: Whether the user wants to receive push notifications for new movies
+              required:
+                - notifications_enabled
       responses:
         '200':
           description: Notification preferences updated successfully
@@ -371,7 +351,7 @@ paths:
 
     post:
       summary: Create a movie
-      description: Creates a new movie and sends FCM push notifications to users with notifications_enabled set to true.
+      description: Creates a new movie and sends FCM push notifications to users with notifications_enabled set to true (requires device_token to be set via /api/v1/update_device_token).
       tags:
         - Movies
       security:

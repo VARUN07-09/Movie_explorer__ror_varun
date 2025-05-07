@@ -47,22 +47,16 @@ module Api
 
       def update
         movie = Movie.find(params[:id])
-        Rails.logger.info "Params received: #{params.inspect}"
         if movie.update(movie_params.except(:poster, :banner))
           if params[:poster].present?
-            Rails.logger.info "Purging and attaching new poster"
             movie.poster.purge
             movie.poster.attach(params[:poster])
-            Rails.logger.info "Poster attached: #{movie.poster.attached?}, Key: #{movie.poster.key}"
           end
           if params[:banner].present?
-            Rails.logger.info "Purging and attaching new banner"
             movie.banner.purge
             movie.banner.attach(params[:banner])
-            Rails.logger.info "Banner attached: #{movie.banner.attached?}, Key: #{movie.banner.key}"
           end
           movie.reload
-          Rails.logger.info "Poster URL: #{movie.poster_url}"
           render json: movie, serializer: MovieSerializer, status: :ok
         else
           render json: { errors: movie.errors.full_messages }, status: :unprocessable_entity
@@ -89,21 +83,16 @@ module Api
         return if users.empty?
 
         device_tokens = users.pluck(:device_token)
-        Rails.logger.info "Sending new movie notification to #{device_tokens.count} users: #{device_tokens}"
         begin
           fcm_service = FcmService.new
-          response = fcm_service.send_notification(
+          fcm_service.send_notification(
             device_tokens,
             "New Movie Added!",
             "#{movie.title} has been added to the Movie Explorer collection.",
             { movie_id: movie.id.to_s }
           )
-          Rails.logger.info "FCM Response: #{response.inspect}"
-          if response[:status_code] != 200
-            Rails.logger.error "FCM Error: #{response[:body]}"
-          end
         rescue StandardError => e
-          Rails.logger.error "FCM Notification Failed: #{e.message}\n#{e.backtrace.join("\n")}"
+          Rails.logger.error "FCM Notification Failed: #{e.message}"
         end
       end
 
