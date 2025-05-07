@@ -10,9 +10,9 @@ Rails.application.routes.draw do
       # Authentication
       post 'signup', to: 'auth#signup'
       post 'login', to: 'auth#login'
-      patch 'auth/update_fcm_token', to: 'auth#update_fcm_token'
-      patch 'auth/notifications/preferences', to: 'auth#update_notification_preferences'
-      post 'auth/create_stripe_customer', to: 'auth#create_stripe_customer'
+      post 'update_device_token', to: 'auth#update_device_token'
+      post 'toggle_notifications', to: 'auth#toggle_notifications'
+      post 'create_stripe_customer', to: 'auth#create_stripe_customer'
 
       # Movies
       resources :movies, only: [:index, :show, :create, :update, :destroy] do
@@ -38,7 +38,7 @@ Rails.application.routes.draw do
       # Payments (Stripe)
       post 'payments/create', to: 'payments#create'
 
-      # Notifications
+      # Notifications (for testing)
       post 'notifications/test', to: 'notifications#test'
     end
   end

@@ -3,33 +3,28 @@ require 'googleauth'
 
 class FcmService
   def initialize
-    json_path = ENV['FCM_SERVICE_ACCOUNT_JSON_PATH']
-    Rails.logger.info("FCM Service Account JSON Path: #{json_path}")
-    raise 'FCM_SERVICE_ACCOUNT_JSON_PATH is not set' if json_path.nil? || json_path.empty?
+    @credentials = Rails.application.credentials.fcm
+    raise 'FCM credentials not found in credentials.yml' unless @credentials
 
-    normalized_path = File.expand_path(json_path)
-    Rails.logger.info("Normalized FCM Service Account JSON Path: #{normalized_path}")
+    # Log credentials for debugging (avoid logging sensitive data in production)
+    Rails.logger.info "FCM Project ID: #{@credentials[:project_id]}"
+    Rails.logger.info "FCM Client Email: #{@credentials[:client_email][0..20]}..."
 
-    raise "FCM Service Account JSON file does not exist at #{normalized_path}" unless File.exist?(normalized_path)
-    raise "FCM Service Account JSON file is not readable at #{normalized_path}" unless File.readable?(normalized_path)
-
-    # Log the first 100 characters of the JSON file for debugging
-    begin
-      json_content = File.read(normalized_path)
-      Rails.logger.info("Service Account JSON Content (first 100 chars): #{json_content[0..100]}...")
-      @credentials = JSON.parse(json_content)
-    rescue Errno::ENOENT, Errno::EACCES => e
-      raise "Failed to read FCM Service Account JSON file: #{e.message}"
-    rescue JSON::ParserError => e
-      raise "Invalid FCM Service Account JSON format: #{e.message}"
-    end
+    # Create a temporary JSON file for Google Auth
+    temp_json_file = Tempfile.new('fcm_service_account.json')
+    temp_json_file.write(@credentials.to_json)
+    temp_json_file.rewind
 
     # Initialize Google Auth credentials for OAuth2 token generation
     @authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
-      json_key_io: StringIO.new(json_content),
+      json_key_io: temp_json_file,
       scope: 'https://www.googleapis.com/auth/firebase.messaging'
     )
     raise 'Failed to initialize Google Auth credentials' if @authorizer.nil?
+
+    # Clean up temp file
+    temp_json_file.close
+    temp_json_file.unlink
   end
 
   def send_notification(device_tokens, title, body, data = {})
@@ -52,7 +47,7 @@ class FcmService
     raise 'Failed to fetch OAuth2 access token' if access_token.nil? || access_token.empty?
 
     # FCM HTTP v1 API endpoint
-    url = "https://fcm.googleapis.com/v1/projects/#{@credentials['project_id']}/messages:send"
+    url = "https://fcm.googleapis.com/v1/projects/#{@credentials[:project_id]}/messages:send"
 
     # HTTP v1 API payload structure
     payload = {
@@ -73,7 +68,7 @@ class FcmService
     begin
       responses = tokens.map do |token|
         payload[:message][:token] = token
-        Rails.logger.info("Sending FCM to token: #{token[0..20]}... with payload: #{payload.inspect}")
+        Rails.logger.info "Sending FCM to token: #{token[0..20]}... with payload: #{payload.inspect}"
 
         response = HTTParty.post(
           url,
@@ -81,7 +76,7 @@ class FcmService
           headers: headers
         )
 
-        Rails.logger.info("Raw FCM Response: #{response.inspect}")
+        Rails.logger.info "Raw FCM Response: #{response.inspect}"
         {
           status_code: response.code,
           body: response.body
@@ -97,7 +92,7 @@ class FcmService
         response: responses
       }
     rescue StandardError => e
-      Rails.logger.error("FCM Error: #{e.message}\n#{e.backtrace.join("\n")}")
+      Rails.logger.error "FCM Error: #{e.message}\n#{e.backtrace.join("\n")}"
       { status_code: 500, body: e.message }
     end
   end

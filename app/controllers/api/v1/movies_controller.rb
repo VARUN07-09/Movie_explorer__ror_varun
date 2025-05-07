@@ -14,7 +14,7 @@ module Api
         movies = movies.where('rating > ?', params[:rating]) if params[:rating].present?
         movies = movies.where('extract(year from release_date) = ?', params[:release_year]) if params[:release_year].present?
         movies = movies.page(params[:page]).per(10)
-      
+
         render json: {
           movies: ActiveModelSerializers::SerializableResource.new(movies, each_serializer: MovieSerializer),
           meta: {
@@ -33,7 +33,7 @@ module Api
       end
 
       def create
-        @movie = Movie.new(movie_params)
+        @movie = Movie.new(movie_params.except(:poster, :banner))
         @movie.poster.attach(params[:poster]) if params[:poster].present?
         @movie.banner.attach(params[:banner]) if params[:banner].present?
 
@@ -47,7 +47,7 @@ module Api
 
       def update
         movie = Movie.find(params[:id])
-        Rails.logger.info "Params received: #{params.inspect}" # Debug params
+        Rails.logger.info "Params received: #{params.inspect}"
         if movie.update(movie_params.except(:poster, :banner))
           if params[:poster].present?
             Rails.logger.info "Purging and attaching new poster"
@@ -61,7 +61,7 @@ module Api
             movie.banner.attach(params[:banner])
             Rails.logger.info "Banner attached: #{movie.banner.attached?}, Key: #{movie.banner.key}"
           end
-          movie.reload # Reload to ensure attachment sync
+          movie.reload
           Rails.logger.info "Poster URL: #{movie.poster_url}"
           render json: movie, serializer: MovieSerializer, status: :ok
         else
@@ -85,20 +85,25 @@ module Api
       private
 
       def send_new_movie_notification(movie)
-        users = User.where(notifications_enabled: true).where.not(device_token: nil)
+        users = User.where(notifications_enabled: true).where.not(device_token: [nil, ""])
         return if users.empty?
+
         device_tokens = users.pluck(:device_token)
+        Rails.logger.info "Sending new movie notification to #{device_tokens.count} users: #{device_tokens}"
         begin
           fcm_service = FcmService.new
-          response = fcm_service.send_notification(device_tokens, "New Movie Added!", "#{movie.title} has been added to the Movie Explorer collection.", { movie_id: movie.id.to_s })
-          Rails.logger.info("FCM Response: #{response}")
-          if response[:status_code] == 200
-            Rails.logger.info("FCM Response: #{response}")
-          else
-            Rails.logger.error("FCM Error: #{response[:body]}")
+          response = fcm_service.send_notification(
+            device_tokens,
+            "New Movie Added!",
+            "#{movie.title} has been added to the Movie Explorer collection.",
+            { movie_id: movie.id.to_s }
+          )
+          Rails.logger.info "FCM Response: #{response.inspect}"
+          if response[:status_code] != 200
+            Rails.logger.error "FCM Error: #{response[:body]}"
           end
         rescue StandardError => e
-          Rails.logger.error("FCM Notification Failed: #{e.message}")
+          Rails.logger.error "FCM Notification Failed: #{e.message}\n#{e.backtrace.join("\n")}"
         end
       end
 

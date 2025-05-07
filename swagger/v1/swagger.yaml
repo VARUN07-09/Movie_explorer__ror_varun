@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: Movie Explorer+ API
   version: v1
-  description: API for managing movies, subscriptions, user authentication, and notifications.
+  description: API for managing movies, subscriptions, user authentication, and push notifications via Firebase Cloud Messaging (FCM).
 
 paths:
   /api/v1/signup:
@@ -46,17 +46,23 @@ paths:
               schema:
                 type: object
                 properties:
-                  id:
-                    type: integer
-                  name:
-                    type: string
-                  email:
-                    type: string
-                    format: email
-                required:
-                  - id
-                  - name
-                  - email
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      email:
+                        type: string
+                        format: email
+                      role:
+                        type: string
+                    required:
+                      - id
+                      - name
+                      - email
+                      - role
         '422':
           description: Invalid input
           content:
@@ -81,16 +87,19 @@ paths:
             schema:
               type: object
               properties:
-                email:
-                  type: string
-                  format: email
-                  description: User's email address
-                password:
-                  type: string
-                  description: User's password
-              required:
-                - email
-                - password
+                auth:
+                  type: object
+                  properties:
+                    email:
+                      type: string
+                      format: email
+                      description: User's email address
+                    password:
+                      type: string
+                      description: User's password
+                  required:
+                    - email
+                    - password
       responses:
         '200':
           description: Successful login
@@ -112,10 +121,13 @@ paths:
                       email:
                         type: string
                         format: email
+                      role:
+                        type: string
                     required:
                       - id
                       - name
                       - email
+                      - role
                 required:
                   - token
                   - user
@@ -129,24 +141,152 @@ paths:
                   error:
                     type: string
 
+  /api/v1/update_device_token:
+    post:
+      summary: Update user's device token for push notifications
+      tags:
+        - Notifications
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                device_token:
+                  type: string
+                  description: FCM (Firebase Cloud Messaging) token for push notifications
+                fcm_token:
+                  type: string
+                  description: Alternative key for FCM token
+                auth:
+                  type: object
+                  properties:
+                    fcm_token:
+                      type: string
+                      description: Nested FCM token (for legacy clients)
+              oneOf:
+                - required: [device_token]
+                - required: [fcm_token]
+                - required: [auth]
+      responses:
+        '200':
+          description: Device token updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Confirmation message
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '422':
+          description: Invalid input (e.g., blank token)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: string
+
+  /api/v1/toggle_notifications:
+    post:
+      summary: Toggle user notification preferences
+      tags:
+        - Notifications
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notifications_enabled:
+                  type: boolean
+                  description: Whether the user wants to receive push notifications
+                notify_on_new_movie:
+                  type: boolean
+                  description: Legacy parameter for enabling/disabling new movie notifications
+                auth:
+                  type: object
+                  properties:
+                    notify_on_new_movie:
+                      type: boolean
+                      description: Nested legacy parameter for new movie notifications
+              oneOf:
+                - required: [notifications_enabled]
+                - required: [notify_on_new_movie]
+                - required: [auth]
+      responses:
+        '200':
+          description: Notification preferences updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Confirmation message
+                  notifications_enabled:
+                    type: boolean
+                    description: Current state of notification preference
+                required:
+                  - message
+                  - notifications_enabled
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '422':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: string
+
   /api/v1/movies:
     get:
       summary: List movies
       tags:
         - Movies
-      security:
-        - Bearer: []
       parameters:
         - name: page
           in: query
           schema:
             type: integer
-          description: Page number for pagination
+          description: Page number for pagination (10 movies per page)
         - name: search
           in: query
           schema:
             type: string
-          description: Search term for movie titles
+          description: Search term for movie titles (case-insensitive)
         - name: genre
           in: query
           schema:
@@ -162,7 +302,7 @@ paths:
           schema:
             type: number
             format: float
-          description: Filter movies by rating
+          description: Filter movies by minimum rating
       responses:
         '200':
           description: Successful response with movie list
@@ -212,34 +352,26 @@ paths:
                         - title
                         - genre
                         - release_year
-                    meta:
-                      type: object
-                      properties:
-                        current_page:
-                          type: integer
-                        total_pages:
-                          type: integer
-                        total_count:
-                          type: integer
-                      required:
-                        - current_page
-                        - total_pages
-                        - total_count
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      total_pages:
+                        type: integer
+                      total_count:
+                        type: integer
+                    required:
+                      - current_page
+                      - total_pages
+                      - total_count
                 required:
                   - movies
                   - meta
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
 
     post:
       summary: Create a movie
+      description: Creates a new movie and sends FCM push notifications to users with notifications_enabled set to true.
       tags:
         - Movies
       security:
@@ -364,8 +496,6 @@ paths:
       summary: Get a movie
       tags:
         - Movies
-      security:
-        - Bearer: []
       parameters:
         - name: id
           in: path
@@ -425,17 +555,8 @@ paths:
                 properties:
                   error:
                     type: string
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
 
-    put:
+    patch:
       summary: Update a movie
       tags:
         - Movies
@@ -616,7 +737,7 @@ paths:
     get:
       summary: Get available subscription plans
       tags:
-        - Subscription
+        - Subscriptions
       responses:
         '200':
           description: A list of available subscription plans
@@ -651,21 +772,12 @@ paths:
                     - price
                     - duration
                     - plan_type
-        '401':
-          description: Unauthorized access
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
 
   /api/v1/user_subscriptions/buy:
     post:
       summary: User buys a subscription
       tags:
-        - Subscription
+        - Subscriptions
       security:
         - Bearer: []
       requestBody:
@@ -722,7 +834,7 @@ paths:
                     items:
                       type: string
         '401':
-          description: Unauthorized access
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -735,7 +847,7 @@ paths:
     get:
       summary: Get user subscription details
       tags:
-        - Subscription
+        - Subscriptions
       security:
         - Bearer: []
       parameters:
@@ -781,7 +893,7 @@ paths:
                   error:
                     type: string
         '401':
-          description: Unauthorized access
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -790,28 +902,29 @@ paths:
                   error:
                     type: string
 
-  /api/v1/auth/notifications/preferences:
-    patch:
-      summary: Update user notification preferences
+  /api/v1/notifications/test:
+    post:
+      summary: Test FCM notification
       tags:
         - Notifications
       security:
         - Bearer: []
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
               type: object
               properties:
-                notify_on_new_movie:
-                  type: boolean
-                  description: Whether the user wants to receive notifications when a new movie is added
-              required:
-                - notify_on_new_movie
+                title:
+                  type: string
+                  description: Notification title (optional, defaults to 'Test Notification')
+                body:
+                  type: string
+                  description: Notification body (optional, defaults to 'This is a test notification')
       responses:
         '200':
-          description: Notification preferences updated successfully
+          description: Test notification sent successfully
           content:
             application/json:
               schema:
@@ -819,8 +932,18 @@ paths:
                 properties:
                   message:
                     type: string
+                    description: Confirmation message
         '401':
-          description: Unauthorized access
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '500':
+          description: Failed to send notification
           content:
             application/json:
               schema:
