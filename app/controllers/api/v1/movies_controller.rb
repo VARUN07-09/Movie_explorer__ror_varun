@@ -76,6 +76,36 @@ module Api
         render json: { error: 'Movie not found' }, status: :not_found
       end
 
+      # Get all movies in the user's watchlist
+      def watchlist
+        watchlist_movies = current_user.movies
+        render json: {
+          movies: ActiveModelSerializers::SerializableResource.new(watchlist_movies, each_serializer: MovieSerializer)
+        }, status: :ok
+      end
+
+      # Toggle movie in the user's watchlist (add/remove)
+      def toggle_watchlist
+        movie = Movie.find_by(id: params[:movie_id])
+
+        if movie.nil?
+          return render json: { error: "Movie not found" }, status: :not_found
+        end
+
+        # Check if the movie is already in the watchlist
+        watchlist_item = current_user.watchlists.find_by(movie_id: movie.id)
+
+        if watchlist_item
+          # Movie is in the watchlist, so remove it
+          watchlist_item.destroy
+          render json: { message: "Movie removed from watchlist" }, status: :ok
+        else
+          # Movie is not in the watchlist, so add it
+          current_user.watchlists.create(movie: movie)
+          render json: { message: "Movie added to watchlist" }, status: :created
+        end
+      end
+
       private
 
       def send_new_movie_notification(movie)

@@ -713,6 +713,167 @@ paths:
                   error:
                     type: string
 
+  /api/v1/movies/watchlist:
+    get:
+      summary: Fetch all movies in the user's watchlist
+      description: Returns all movies in the authenticated user's watchlist with pagination.
+      tags:
+        - Movies
+      security:
+        - Bearer: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+          description: Page number for pagination (10 movies per page)
+      responses:
+        '200':
+          description: Watchlist movies fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  movies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        title:
+                          type: string
+                        genre:
+                          type: string
+                        release_year:
+                          type: integer
+                        rating:
+                          type: number
+                          format: float
+                        director:
+                          type: string
+                        duration:
+                          type: string
+                        streaming_platform:
+                          type: string
+                        main_lead:
+                          type: string
+                        description:
+                          type: string
+                        premium:
+                          type: boolean
+                        poster_url:
+                          type: string
+                          nullable: true
+                          description: URL of the movie poster (Cloudinary)
+                        banner_url:
+                          type: string
+                          nullable: true
+                          description: URL of the movie banner (Cloudinary)
+                      required:
+                        - id
+                        - title
+                        - genre
+                        - release_year
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      total_pages:
+                        type: integer
+                      total_count:
+                        type: integer
+                    required:
+                      - current_page
+                      - total_pages
+                      - total_count
+                required:
+                  - movies
+                  - meta
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /api/v1/movies/toggle_watchlist:
+    post:
+      summary: Toggle a movie in the user's watchlist (add/remove)
+      description: Adds or removes a movie from the authenticated user's watchlist.
+      tags:
+        - Movies
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                movie_id:
+                  type: integer
+                  description: ID of the movie to add or remove
+              required:
+                - movie_id
+      responses:
+        '200':
+          description: Movie removed from watchlist successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Confirmation message
+                  watchlist_status:
+                    type: boolean
+                    description: False if removed
+                required:
+                  - message
+                  - watchlist_status
+        '201':
+          description: Movie added to watchlist successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Confirmation message
+                  watchlist_status:
+                    type: boolean
+                    description: True if added
+                required:
+                  - message
+                  - watchlist_status
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '404':
+          description: Movie not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
   /api/v1/subscription_plans:
     get:
       summary: Get available subscription plans

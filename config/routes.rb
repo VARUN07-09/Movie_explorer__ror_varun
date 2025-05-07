@@ -19,9 +19,7 @@ Rails.application.routes.draw do
         collection do
           get 'search', to: 'movies#index'
           get 'watchlist', to: 'movies#watchlist'
-        end
-        member do
-          post 'add-to-watchlist', to: 'movies#add_to_watchlist'
+          post 'toggle_watchlist', to: 'movies#toggle_watchlist'
         end
       end
 

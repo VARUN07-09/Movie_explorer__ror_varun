@@ -13,6 +13,14 @@ module Api
         end
       end
 
+      def update_device_token
+        if @current_user.update(device_token: params[:device_token])
+          render json: { message: "Device token updated successfully." }, status: :ok
+        else
+          render json: { errors: @current_user.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+      
       def signup
         user = User.new(user_params)
         if user.save

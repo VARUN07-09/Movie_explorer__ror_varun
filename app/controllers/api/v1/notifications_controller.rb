@@ -3,15 +3,19 @@ module Api
   module V1
     class NotificationsController < ApplicationController
       include Authenticable
-      skip_before_action :verify_authenticity_token 
+      skip_before_action :verify_authenticity_token
       before_action :authenticate_user
       before_action :authorize_admin_or_supervisor!
 
       def test
-        fcm = FCM.new(ENV['FCM_SERVER_KEY'])
+        # Get Firebase Server Key from Rails credentials
+        fcm = FCM.new(Rails.application.credentials.fcm[:private_key])  # Firebase private key is passed from the credentials
+
         user = current_user
-        unless user.fcm_token
-          return render json: { error: 'No FCM token for user' }, status: :unprocessable_entity
+
+        unless user.device_token.present?
+          Rails.logger.warn "User ##{user.id} has no device token"
+          return render json: { error: 'No device token for user' }, status: :unprocessable_entity
         end
 
         message = {
@@ -22,22 +26,23 @@ module Api
           },
           data: {
             test: "true",
-            click_action: "#{ENV['FRONTEND_URL']}/dashboard"
+            click_action: "#{Rails.application.credentials.fcm[:client_email]}"
           },
           webpush: {
             fcm_options: {
-              link: "#{ENV['FRONTEND_URL']}/dashboard"
+              link: "#{Rails.application.credentials.fcm[:client_email]}"
             }
           }
         }
 
-        response = fcm.send([user.fcm_token], message)
+        # Send push notification
+        response = fcm.send([user.device_token], message)
         Rails.logger.info "FCM Test Notification Response: #{response.inspect}"
 
         if response[:status_code] == 200 && response[:response] == 'success'
           render json: { message: "Test notification sent successfully" }, status: :ok
         else
-          render json: { error: "Failed to send test notification: #{response[:body]}" }, status: :unprocessable_entity
+          render json: { error: "Failed to send test notification", details: response[:body] }, status: :unprocessable_entity
         end
       end
 
