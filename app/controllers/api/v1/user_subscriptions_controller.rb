@@ -1,145 +1,111 @@
-# class Api::V1::UserSubscriptionsController < ApplicationController
-#     before_action :authorize_request # Replace with custom JWT authorization
-#     skip_before_action :verify_authenticity_token
+module Api
+    module V1
+      class UserSubscriptionsController < ApplicationController
+        skip_before_action :verify_authenticity_token, only: [:create, :success, :cancel]
+        before_action :authorize_request, only: [:create, :index, :status]
   
-#     # POST /api/v1/user_subscriptions/buy
-#     # Step 1: Initiates Stripe PaymentIntent
-#     def buy
-#       subscription_plan = SubscriptionPlan.find(params[:plan_id])
-#       user = @current_user # We use @current_user instead of current_user
-    
-#       # Create a PaymentIntent with Stripe
-#       payment_intent = Stripe::PaymentIntent.create(
-#         amount: (subscription_plan.price * 100).to_i, # Convert to cents
-#         currency: 'usd',
-#         metadata: {
-#           user_id: user.id,
-#           subscription_plan_id: subscription_plan.id
-#         }
-#       )
-    
-#       render json: {
-#         client_secret: payment_intent.client_secret
-#       }, status: :ok
-#     rescue ActiveRecord::RecordNotFound
-#       render json: { error: 'Subscription plan not found' }, status: :not_found
-#     rescue Stripe::StripeError => e
-#       render json: { error: e.message }, status: :unprocessable_entity
-#     end
-    
-#     # POST /api/v1/user_subscriptions/confirm
-#     # Step 2: Confirms the payment and creates the subscription
-#     def confirm
-#       user = @current_user # We use @current_user instead of current_user
-#       subscription_plan = SubscriptionPlan.find(params[:plan_id])
-      
-#       # Optionally: verify payment status via Stripe API here
-#       # payment_intent_id = params[:payment_intent_id]
-#       # payment_intent = Stripe::PaymentIntent.retrieve(payment_intent_id)
-#       # return unless payment_intent.status == 'succeeded'
+        def index
+          subscriptions = @current_user ? @current_user.user_subscriptions : UserSubscription.none
+          render json: subscriptions.as_json(
+            only: [:id, :start_date, :end_date, :status, :expires_at, :plan_type]
+          ), status: :ok
+        end
   
-#       user_subscription = UserSubscription.new(
-#         user: user,
-#         subscription_plan: subscription_plan,
-#         start_date: Date.today,
-#         end_date: Date.today + subscription_plan.duration_months,
-#         status: :active
-#       )
+        def create
+          plan_type = params[:plan_type]
   
-#       if user_subscription.save
-#         render json: user_subscription, status: :created
-#       else
-#         render json: user_subscription.errors, status: :unprocessable_entity
-#       end
-#     rescue ActiveRecord::RecordNotFound
-#       render json: { error: 'Subscription plan not found' }, status: :not_found
-#     end
+          stripe_price_id = {
+            "1-day" => "price_1RM6yRR60cloYk2YXlHpCByC",
+            "1-month" => "price_1RM70MR60cloYk2YO5iscjxb",
+            "3-months" => "price_1RM71XR60cloYk2YEFk5uoKx"
+          }[plan_type]
   
-#     private
+          unless stripe_price_id
+            return render json: { error: 'Invalid or missing plan_type' }, status: :bad_request
+          end
   
-#     # JWT Authorization Logic
-#    # JWT Authorization Logic
-#    def authorize_request
-#     header = request.headers['Authorization']
-#     if header.present?
-#       token = header.split(' ').last
-#       Rails.logger.info("Received token: #{token}")
+          begin
+            existing_subscription = @current_user.user_subscriptions.find_by(status: :active)
+            stripe_customer_id = existing_subscription&.stripe_customer_id || Stripe::Customer.create(email: @current_user.email).id
   
-#       begin
-#         decoded = JsonWebToken.decode(token)
-#         @current_user = User.find(decoded['user_id'])
-#       rescue ActiveRecord::RecordNotFound => e
-#         Rails.logger.error("User not found: #{e.message}")
-#         render json: { errors: ['Invalid or missing token'] }, status: :unauthorized
-#       rescue JWT::DecodeError => e
-#         Rails.logger.error("JWT DecodeError: #{e.message}")
-#         render json: { errors: ['Invalid token'] }, status: :unauthorized
-#       end
-#     else
-#       Rails.logger.error("Authorization header missing")
-#       render json: { errors: ['Missing token'] }, status: :unauthorized
-#     end
-#   end
+            session = Stripe::Checkout::Session.create(
+              customer: stripe_customer_id,
+              payment_method_types: ['card'],
+              line_items: [{ price: stripe_price_id, quantity: 1 }],
+              mode: 'payment',
+              metadata: {
+                user_id: @current_user.id,
+                plan_type: plan_type
+              },
+              success_url: "http://localhost:3000/api/v1/user_subscriptions/success?session_id={CHECKOUT_SESSION_ID}",
+              cancel_url: "http://localhost:3000/api/v1/user_subscriptions/cancel"
+            )
   
+            render json: { session_id: session.id, url: session.url }, status: :ok
+          rescue Stripe::StripeError => e
+            Rails.logger.error("Stripe error: #{e.message}")
+            render json: { error: "Stripe error: #{e.message}" }, status: :unprocessable_entity
+          end
+        end
   
-# end
-class Api::V1::UserSubscriptionsController < ApplicationController
-  skip_before_action :verify_authenticity_token  # Skip CSRF verification for API requests
-  before_action :authorize_request # Your custom JWT authorization logic
+        def success
+          session = Stripe::Checkout::Session.retrieve(params[:session_id])
+          plan_type = session.metadata['plan_type']
   
+          duration_days = case plan_type
+                          when '1-day' then 1
+                          when '1-month' then 30
+                          when '3-months' then 90
+                          else 30
+                          end
+  
+          user = User.find_by(id: session.metadata['user_id'])
+          return render json: { error: 'User not found' }, status: :unprocessable_entity unless user
+  
+          start_date = Date.today
+          end_date = start_date + duration_days.days
+  
+          # Mark previous subscriptions as inactive
+          user.user_subscriptions.update_all(status: "cancelled")
 
-  # POST /api/v1/user_subscriptions/buy
-  def buy
-    subscription_plan = SubscriptionPlan.find(params[:plan_id])
-    user = @current_user # Use @current_user instead of current_user
-
-    # Create the Stripe PaymentIntent here, using the stripe_token from the frontend
-    begin
-      payment_intent = Stripe::PaymentIntent.create(
-        amount: (subscription_plan.price * 100).to_i, # Convert to cents
-        currency: 'usd',
-        metadata: {
-          user_id: user.id,
-          subscription_plan_id: subscription_plan.id
-        }
-      )
-
-      render json: { client_secret: payment_intent.client_secret }, status: :ok
-    rescue ActiveRecord::RecordNotFound
-      render json: { error: 'Subscription plan not found' }, status: :not_found
-    rescue Stripe::StripeError => e
-      render json: { error: e.message }, status: :unprocessable_entity
-    end
-  end
-
-  private
-
-  def authorize_request
-    header = request.headers['Authorization']
-    token = header.split(' ').last if header
-    Rails.logger.debug "Authorization header: #{header}"
-    Rails.logger.debug "Token: #{token}"
   
-    begin
-      decoded = JWT.decode(token, Rails.application.secrets.secret_key_base)[0]
-      Rails.logger.debug "Decoded payload: #{decoded.inspect}"
+          user.user_subscriptions.create!(
+            plan_type: plan_type,
+            start_date: start_date,
+            end_date: end_date,
+            status: :active,
+            stripe_customer_id: session.customer,
+            stripe_subscription_id: session.payment_intent,
+            expires_at: end_date
+          )
   
-      user_id = decoded['user_id']
-      @current_user = User.find_by(id: user_id)
+          render json: { message: 'Subscription created successfully' }, status: :ok
+        end
   
-      if @current_user.nil?
-        Rails.logger.debug "User not found with ID #{user_id}"
-        render json: { errors: 'User not found' }, status: :unauthorized
-      else
-        Rails.logger.debug "Current user: #{@current_user.email}"
+        def cancel
+          render json: { message: 'Payment cancelled' }, status: :ok
+        end
+  
+        def status
+          subscription = @current_user.user_subscriptions.find_by(status: :active)
+  
+          if subscription.nil?
+            return render json: { error: 'No active subscription found' }, status: :not_found
+          end
+  
+          if subscription.expires_at.present? && subscription.expires_at < Time.current
+            subscription.update!(
+              plan_type: '1-day',
+              start_date: Date.today,
+              end_date: Date.today + 1.day,
+              expires_at: Date.today + 1.day
+            )
+            render json: { plan_type: '1-day', message: 'Expired. Downgraded to 1-day.' }, status: :ok
+          else
+            render json: { plan_type: subscription.plan_type }, status: :ok
+          end
+        end
       end
-  
-    rescue JWT::DecodeError => e
-      Rails.logger.debug "JWT DecodeError: #{e.message}"
-      render json: { errors: 'Invalid token' }, status: :unauthorized
     end
   end
   
-  
-  
-end

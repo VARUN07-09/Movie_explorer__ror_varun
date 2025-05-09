@@ -1,27 +1,13 @@
-# app/models/user_subscription.rb
 class UserSubscription < ApplicationRecord
   belongs_to :user
-  belongs_to :subscription_plan
+  enum status: { pending: 0, active: 1, expired: 2, canceled: 3 }
+  validates :start_date, :end_date, :status, presence: true
 
-  enum status: { active: 0, canceled: 1, expired: 2 }
-
-  validates :subscription_plan_id, presence: true
-  validates :user_id, presence: true
-  validates :start_date, presence: true
-  validates :end_date, presence: true
-
-  # Allow searching on specific attributes
   def self.ransackable_attributes(auth_object = nil)
-    ["created_at", "end_date", "id", "start_date", "status", "subscription_plan_id", "updated_at", "user_id"]
+    ["id", "user_id", "subscription_plan_id", "start_date", "end_date", "status", "created_at", "updated_at", "stripe_customer_id", "stripe_subscription_id", "expires_at"]
   end
 
-  # Allow searching on the associations 'user' and 'subscription_plan'
   def self.ransackable_associations(auth_object = nil)
-    ["subscription_plan", "user"]
-  end
-
-  # Method to check if subscription is still valid
-  def valid_subscription?
-    status == "active" && end_date > Time.current
+    ["user", "subscription_plan"]
   end
 end
