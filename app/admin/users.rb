@@ -14,14 +14,6 @@ ActiveAdmin.register User do
       row :updated_at
     end
 
-  #   panel "Subscriptions" do
-  #     table_for user.subscriptions do
-  #       column :plan_type
-  #       column :status
-  #       column :start_date
-  #       column :end_date
-  #     end
-  #   end
   end
 
   form do |f|

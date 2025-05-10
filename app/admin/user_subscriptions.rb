@@ -1,4 +1,4 @@
-# app/admin/user_subscriptions.rb
+
 ActiveAdmin.register UserSubscription do
     permit_params :user_id, :plan_type, :start_date, :end_date, :status
   

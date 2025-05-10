@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: Movie Explorer+ API
   version: v1
-  description: API for managing movies, subscriptions, user authentication, payments, and push notifications via Firebase Cloud Messaging (FCM).
+  description: API for managing movies, user authentication, push notifications via Firebase Cloud Messaging (FCM), and user subscriptions.
 
 paths:
   /api/v1/signup:
@@ -432,7 +432,7 @@ paths:
   /api/v1/movies:
     get:
       summary: List movies
-      description: Retrieves a paginated list of movies with optional filters.
+      description: Retrieves a paginated list of movies with optional filters. No authentication required.
       tags:
         - Movies
       parameters:
@@ -462,7 +462,7 @@ paths:
             type: number
             format: float
           description: Filter by minimum rating
-          security: []
+      security: []
       responses:
         '200':
           description: Successful response
@@ -638,7 +638,7 @@ paths:
   /api/v1/movies/search:
     get:
       summary: Search movies
-      description: Searches movies with filters (same as /api/v1/movies).
+      description: Searches movies with filters (same as /api/v1/movies). No authentication required.
       tags:
         - Movies
       parameters:
@@ -663,6 +663,7 @@ paths:
           schema:
             type: number
             format: float
+      security: []
       responses:
         '200':
           description: Successful response
@@ -859,7 +860,7 @@ paths:
   /api/v1/movies/{id}:
     get:
       summary: Get movie
-      description: Fetches a specific movie by ID.
+      description: Fetches a specific movie by ID. Requires authentication via Bearer token.
       tags:
         - Movies
       parameters:
@@ -868,6 +869,8 @@ paths:
           required: true
           schema:
             type: integer
+      security:
+        - Bearer: []
       responses:
         '200':
           description: Successful response
@@ -910,6 +913,15 @@ paths:
                   - title
                   - genre
                   - release_year
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
         '404':
           description: Movie not found
           content:
@@ -1079,102 +1091,6 @@ paths:
                     type: string
         '404':
           description: Movie not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-
-  /api/v1/subscription_plans:
-    get:
-      summary: List subscription plans
-      description: Fetches all available subscription plans.
-      tags:
-        - Subscriptions
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                    name:
-                      type: string
-                    plan_type:
-                      type: string
-                      enum: [1-day, 1-month, 3-months]
-                    price:
-                      type: number
-                      format: float
-                    duration:
-                      type: string
-                    description:
-                      type: string
-                  required:
-                    - id
-                    - name
-                    - plan_type
-                    - price
-                    - duration
-        '404':
-          description: Plans not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-
-  /api/v1/subscription_plans/{id}:
-    get:
-      summary: Get subscription plan
-      description: Fetches a specific subscription plan by ID.
-      tags:
-        - Subscriptions
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                  name:
-                    type: string
-                  plan_type:
-                    type: string
-                    enum: [1-day, 1-month, 3-months]
-                  price:
-                    type: number
-                    format: float
-                  duration:
-                    type: string
-                  description:
-                    type: string
-                required:
-                  - id
-                  - name
-                  - plan_type
-                  - price
-                  - duration
-        '404':
-          description: Plan not found
           content:
             application/json:
               schema:

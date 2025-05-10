@@ -27,7 +27,10 @@ module Api
         }, status: :ok
       end
       def show
-        render json: @movie.as_json(except: [:created_at, :updated_at], methods: [:poster_url, :banner_url]), status: :ok
+        render json: ActiveModelSerializers::SerializableResource.new(
+          @movie,
+          serializer: MovieSerializer
+        ).as_json, status: :ok
       end
 
       def create
@@ -57,9 +60,15 @@ module Api
         render json: { message: 'Movie deleted successfully' }, status: :ok
       end
 
+      
       def watchlist
-        movies = @current_user.watchlist_movies
-        render json: { movies: movies.as_json(except: [:created_at, :updated_at], methods: [:poster_url, :banner_url]) }, status: :ok
+        movies = @current_user.movies
+        render json: {
+          movies: ActiveModelSerializers::SerializableResource.new(
+            movies,
+            each_serializer: MovieSerializer
+          ).as_json
+        }, status: :ok
       end
 
       def toggle_watchlist
