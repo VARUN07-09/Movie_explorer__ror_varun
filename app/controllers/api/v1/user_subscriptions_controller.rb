@@ -64,8 +64,6 @@ module Api
   
           start_date = Date.today
           end_date = start_date + duration_days.days
-  
-          # Mark previous subscriptions as inactive
           user.user_subscriptions.update_all(status: "cancelled")
 
   

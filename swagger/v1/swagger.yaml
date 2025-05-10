@@ -462,6 +462,7 @@ paths:
             type: number
             format: float
           description: Filter by minimum rating
+          security: []
       responses:
         '200':
           description: Successful response

@@ -2,44 +2,51 @@ require 'rails_helper'
 
 RSpec.describe User, type: :model do
   describe 'validations' do
-    it 'is valid with valid attributes' do
-      user = User.new(
+    let(:user_attributes) do
+      {
         name: 'John Doe',
         email: 'john@example.com',
-        password: 'password',
+        password: 'password123',
+        password_confirmation: 'password123',
         role: :user
-      )
+      }
+    end
+
+    it 'is valid with valid attributes' do
+      user = build(:user, user_attributes)
       expect(user).to be_valid
     end
 
     it 'is invalid without a name' do
-      user = User.new(name: nil, email: 'john@example.com', password: 'password')
+      user = build(:user, user_attributes.merge(name: nil))
       expect(user).not_to be_valid
       expect(user.errors[:name]).to include("can't be blank")
     end
 
     it 'is invalid without an email' do
-      user = User.new(name: 'John', email: nil, password: 'password')
+      user = build(:user, user_attributes.merge(email: nil))
       expect(user).not_to be_valid
       expect(user.errors[:email]).to include("can't be blank")
     end
 
     it 'is invalid with a duplicate email' do
-      User.create!(name: 'Jane', email: 'jane@example.com', password: 'password')
-      user = User.new(name: 'Another', email: 'jane@example.com', password: 'password')
+      create(:user, email: 'jane@example.com')
+      user = build(:user, user_attributes.merge(email: 'jane@example.com'))
       expect(user).not_to be_valid
       expect(user.errors[:email]).to include("has already been taken")
     end
 
     it 'is invalid with a short password' do
-      user = User.new(name: 'Shorty', email: 'short@example.com', password: '123')
+      user = build(:user, user_attributes.merge(password: '123', password_confirmation: '123'))
       expect(user).not_to be_valid
-      expect(user.errors[:password]).to include("is too short (minimum is 6 characters)")
+      expect(user.errors[:password]).to include("is too short (minimum is 8 characters)")
     end
   end
 
   describe 'associations' do
-    it { should have_one(:subscription).dependent(:destroy) }
+    it { should have_many(:user_subscriptions).dependent(:destroy) }
+    it { should have_many(:watchlists).dependent(:destroy) }
+    it { should have_many(:movies).through(:watchlists) }
   end
 
   describe 'enums' do

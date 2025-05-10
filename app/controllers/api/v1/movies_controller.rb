@@ -2,7 +2,7 @@ module Api
   module V1
     class MoviesController < ApplicationController
       skip_before_action :verify_authenticity_token, only: [:create, :update, :destroy, :toggle_watchlist]
-      before_action :authorize_request
+      before_action :authorize_request, except: [:index]
       before_action :set_movie, only: [:show, :update, :destroy]
       before_action :authorize_admin_or_supervisor, only: [:create, :update, :destroy]
 
@@ -12,10 +12,13 @@ module Api
         movies = movies.where(genre: params[:genre]) if params[:genre].present?
         movies = movies.where('rating >= ?', params[:rating]) if params[:rating].present?
         movies = movies.where(release_year: params[:release_year]) if params[:release_year].present?
-
+      
         paginated_movies = movies.page(params[:page]).per(10)
         render json: {
-          movies: paginated_movies.as_json(except: [:created_at, :updated_at], methods: [:poster_url, :banner_url]),
+          movies: ActiveModelSerializers::SerializableResource.new(
+            paginated_movies,
+            each_serializer: MovieSerializer
+          ).as_json,
           meta: {
             current_page: paginated_movies.current_page,
             total_pages: paginated_movies.total_pages,
@@ -23,7 +26,6 @@ module Api
           }
         }, status: :ok
       end
-
       def show
         render json: @movie.as_json(except: [:created_at, :updated_at], methods: [:poster_url, :banner_url]), status: :ok
       end
