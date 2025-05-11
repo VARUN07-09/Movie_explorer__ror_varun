@@ -26,6 +26,9 @@ class Movie < ApplicationRecord
       nil
     end
   end
+  def self.search(query)
+    ransack(title_cont: query).result
+  end
 
   def self.ransackable_attributes(auth_object = nil)
     ["created_at", "genre", "id", "id_value", "poster", "rating", "release_year", "title", "updated_at"]

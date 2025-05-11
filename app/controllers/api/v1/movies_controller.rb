@@ -1,3 +1,4 @@
+# app/controllers/api/v1/movies_controller.rb
 module Api
   module V1
     class MoviesController < ApplicationController
@@ -26,6 +27,7 @@ module Api
           }
         }, status: :ok
       end
+
       def show
         render json: ActiveModelSerializers::SerializableResource.new(
           @movie,
@@ -39,7 +41,10 @@ module Api
         movie.banner.attach(params[:banner]) if params[:banner].present?
 
         if movie.save
-          render json: movie.as_json(except: [:created_at, :updated_at], methods: [:poster_url, :banner_url]), status: :created
+          render json: ActiveModelSerializers::SerializableResource.new(
+            movie,
+            serializer: MovieSerializer
+          ).as_json, status: :created
         else
           render json: { errors: movie.errors.full_messages }, status: :unprocessable_entity
         end
@@ -49,7 +54,10 @@ module Api
         if @movie.update(movie_params.except(:poster, :banner))
           @movie.poster.attach(params[:poster]) if params[:poster].present?
           @movie.banner.attach(params[:banner]) if params[:banner].present?
-          render json: @movie.as_json(except: [:created_at, :updated_at], methods: [:poster_url, :banner_url]), status: :ok
+          render json: ActiveModelSerializers::SerializableResource.new(
+            @movie,
+            serializer: MovieSerializer
+          ).as_json, status: :ok
         else
           render json: { errors: @movie.errors.full_messages }, status: :unprocessable_entity
         end
@@ -60,7 +68,6 @@ module Api
         render json: { message: 'Movie deleted successfully' }, status: :ok
       end
 
-      
       def watchlist
         movies = @current_user.movies
         render json: {
