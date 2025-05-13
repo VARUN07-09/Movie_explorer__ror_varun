@@ -1,14 +1,13 @@
-# app/services/json_web_token.rb
+
 class JsonWebToken
     JWT_SECRET_KEY = Rails.application.credentials.jwt_secret_key || ENV['JWT_SECRET_KEY']
 
-    # Encode the payload with a secret key
+   
     def self.encode(payload)
-      # Use Rails credentials to get the secret key
-      JWT.encode(payload, Rails.application.credentials.jwt_secret_key) # Or ENV['JWT_SECRET_KEY']
+      
+      JWT.encode(payload, Rails.application.credentials.jwt_secret_key) 
     end
-  
-    # Decode the token and return the payload
+
     def self.decode(token)
         secret = Rails.application.credentials.jwt_secret_key || ENV['JWT_SECRET_KEY']
         Rails.logger.info("Decoding token with secret: #{secret.present? ? 'present' : 'missing'}")

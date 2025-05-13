@@ -6,23 +6,20 @@ class FcmService
     @credentials = Rails.application.credentials.fcm
     raise 'FCM credentials not found in credentials.yml' unless @credentials
 
-    # Log credentials for debugging (avoid logging sensitive data in production)
     Rails.logger.info "FCM Project ID: #{@credentials[:project_id]}"
     Rails.logger.info "FCM Client Email: #{@credentials[:client_email][0..20]}..."
 
-    # Create a temporary JSON file for Google Auth
     temp_json_file = Tempfile.new('fcm_service_account.json')
     temp_json_file.write(@credentials.to_json)
     temp_json_file.rewind
 
-    # Initialize Google Auth credentials for OAuth2 token generation
     @authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
       json_key_io: temp_json_file,
       scope: 'https://www.googleapis.com/auth/firebase.messaging'
     )
     raise 'Failed to initialize Google Auth credentials' if @authorizer.nil?
 
-    # Clean up temp file
+    
     temp_json_file.close
     temp_json_file.unlink
   end
@@ -42,14 +39,13 @@ class FcmService
 
     return { status_code: 200, body: 'No valid device tokens' } if tokens.empty?
 
-    # Fetch OAuth2 access token
+   
     access_token = @authorizer.fetch_access_token!['access_token']
     raise 'Failed to fetch OAuth2 access token' if access_token.nil? || access_token.empty?
 
-    # FCM HTTP v1 API endpoint
+    
     url = "https://fcm.googleapis.com/v1/projects/#{@credentials[:project_id]}/messages:send"
 
-    # HTTP v1 API payload structure
     payload = {
       message: {
         notification: {
