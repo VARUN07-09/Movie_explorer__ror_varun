@@ -52,3 +52,6 @@ gem 'httparty'
 gem 'googleauth'
    
 gem 'simplecov', '0.17.0'
+group :test do
+  gem 'database_cleaner'
+end

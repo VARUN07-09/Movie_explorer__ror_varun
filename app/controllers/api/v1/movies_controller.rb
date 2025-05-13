@@ -1,4 +1,3 @@
-# app/controllers/api/v1/movies_controller.rb
 module Api
   module V1
     class MoviesController < ApplicationController
@@ -41,6 +40,7 @@ module Api
         movie.banner.attach(params[:banner]) if params[:banner].present?
 
         if movie.save
+          send_new_movie_notification(movie)
           render json: ActiveModelSerializers::SerializableResource.new(
             movie,
             serializer: MovieSerializer
@@ -110,6 +110,17 @@ module Api
           render json: { error: 'Unauthorized' }, status: :unauthorized
         end
       end
+      def send_new_movie_notification(movie)
+        users = User.where(notifications_enabled: true).where.not(device_token: nil)
+        return if users.empty?
+        device_tokens = users.pluck(:device_token)
+        begin
+          fcm_service = FcmService.new
+          fcm_service.send_notification(device_tokens, "New Movie Added!", "#{movie.title} has been added to the Movie Explorer collection.", { movie_id: movie.id.to_s })
+        rescue StandardError
+        end
+      end
+
     end
   end
 end

@@ -1,14 +1,16 @@
+# spec/factories/movies.rb
 FactoryBot.define do
   factory :movie do
-    title { "Test Movie" }
+    sequence(:title) { |n| "Movie #{n}" } # Unique titles: "Movie 1", "Movie 2", etc.
     genre { "Action" }
     release_year { 2023 }
     rating { 7.5 }
-    director { "Test Director" }
-    duration { "2h" }
+    director { "John Doe" }
+    duration { 120 }
     streaming_platform { "Netflix" }
-    main_lead { "Test Actor" }
-    description { "A test movie description" }
+    main_lead { "Jane Doe" }
+    description { "A sample movie description" }
     premium { false }
+    # Note: poster and banner are handled as attachments in tests, not in the factory
   end
 end
