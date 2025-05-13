@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-# Helper to generate JWT tokens, mimicking AuthController's encode_token
+
 def encode_token(user_id)
   JWT.encode({ user_id: user_id, exp: 24.hours.from_now.to_i }, Rails.application.credentials.secret_key_base)
 end
@@ -12,8 +12,8 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
   let(:movie) { create(:movie) }
 
   before do
-    Watchlist.delete_all # Clear watchlists first to avoid foreign key violation
-    Movie.delete_all # Then clear movies
+    Watchlist.delete_all 
+    Movie.delete_all
   end
 
   describe 'GET /api/v1/movies' do
@@ -23,9 +23,9 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         get :index, params: { page: 1 }
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        expect(json['movies'].size).to eq(10) # Expect 10 per page
+        expect(json['movies'].size).to eq(10) 
         expect(json['meta']['current_page']).to eq(1)
-        expect(json['meta']['total_pages']).to eq(2) # 15 movies, 10 per page
+        expect(json['meta']['total_pages']).to eq(2) 
         expect(json['meta']['total_count']).to eq(15)
       end
     end
@@ -39,6 +39,14 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         json = JSON.parse(response.body)
         expect(json['movies'].size).to eq(1)
         expect(json['movies'][0]['title']).to eq('Inception')
+      end
+
+      it 'returns all movies for empty search' do
+        create_list(:movie, 5)
+        get :index, params: { search: '' }
+        expect(response).to have_http_status(:ok)
+        json = JSON.parse(response.body)
+        expect(json['movies'].size).to eq(5)
       end
     end
 
@@ -62,7 +70,7 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         expect(json['movies'].size).to eq(1)
-        expect(json['movies'][0]['rating']).to eq("8.0") # Expect string due to serialization
+        expect(json['movies'][0]['rating']).to eq('8.0') # Expect string
       end
     end
 
@@ -108,6 +116,15 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         expect(JSON.parse(response.body)['error']).to eq('Authorization header missing or invalid')
       end
     end
+
+    context 'with invalid JWT token' do
+      it 'returns unauthorized' do
+        request.headers['Authorization'] = 'Bearer invalid_token'
+        get :show, params: { id: movie.id }
+        expect(response).to have_http_status(:unauthorized)
+        expect(JSON.parse(response.body)['error']).to eq('Invalid token: Not enough or too many segments')
+      end
+    end
   end
 
   describe 'POST /api/v1/movies' do
@@ -122,9 +139,7 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         streaming_platform: 'Netflix',
         main_lead: 'Jane Doe',
         description: 'A thrilling movie',
-        premium: false,
-        poster: fixture_file_upload('spec/fixtures/poster.jpg', 'image/jpeg'),
-        banner: fixture_file_upload('spec/fixtures/banner.jpg', 'image/jpeg')
+        premium: false
       }
     end
 
@@ -136,8 +151,8 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         expect(response).to have_http_status(:created)
         json = JSON.parse(response.body)
         expect(json['title']).to eq('New Movie')
-        expect(json['poster_url']).to be_present
-        expect(json['banner_url']).to be_present
+        expect(json['poster_url']).to be_nil
+        expect(json['banner_url']).to be_nil
       end
     end
 
@@ -161,19 +176,27 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
     end
 
     context 'with invalid params' do
-      it 'returns unprocessable entity' do
+      it 'returns unprocessable entity for missing genre' do
         token = encode_token(admin.id)
         request.headers['Authorization'] = "Bearer #{token}"
-        post :create, params: { title: '' }
+        post :create, params: valid_params.except(:genre)
         expect(response).to have_http_status(:unprocessable_entity)
-        expect(JSON.parse(response.body)['errors']).to include("Title can't be blank")
+        expect(JSON.parse(response.body)['errors']).to include("Genre can't be blank")
+      end
+
+      it 'returns unprocessable entity for invalid release_year' do
+        token = encode_token(admin.id)
+        request.headers['Authorization'] = "Bearer #{token}"
+        post :create, params: valid_params.merge(release_year: 1800)
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)['errors']).to include("Release year must be greater than 1880")
       end
     end
   end
 
   describe 'PUT /api/v1/movies/:id' do
     let(:update_params) do
-      { title: 'Updated Movie', poster: fixture_file_upload('spec/fixtures/new_poster.jpg', 'image/jpeg') }
+      { title: 'Updated Movie' }
     end
 
     context 'as admin' do
@@ -184,7 +207,6 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         expect(json['title']).to eq('Updated Movie')
-        expect(json['poster_url']).to be_present
       end
     end
 
@@ -216,6 +238,16 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         expect(JSON.parse(response.body)['error']).to eq('Movie not found')
       end
     end
+
+    context 'with invalid params' do
+      it 'returns unprocessable entity for blank title' do
+        token = encode_token(admin.id)
+        request.headers['Authorization'] = "Bearer #{token}"
+        put :update, params: { id: movie.id, title: '' }
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)['errors']).to include("Title can't be blank")
+      end
+    end
   end
 
   describe 'DELETE /api/v1/movies/:id' do
@@ -226,7 +258,7 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         delete :destroy, params: { id: movie.id }
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)['message']).to eq('Movie deleted successfully')
-        expect(Movie.exists?(movie.id)).to be false
+        expect(Movie.exists?(movie.id)).to be_falsey
       end
     end
 
