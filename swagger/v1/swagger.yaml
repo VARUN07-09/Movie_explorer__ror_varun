@@ -386,49 +386,7 @@ paths:
                     items:
                       type: string
 
-  /api/v1/create_stripe_customer:
-    post:
-      summary: Create Stripe customer
-      description: Creates a Stripe customer for the authenticated user.
-      tags:
-        - Authentication
-      security:
-        - Bearer: []
-      responses:
-        '201':
-          description: Stripe customer created
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  customer_id:
-                    type: string
-                    description: Stripe customer ID
-                required:
-                  - message
-                  - customer_id
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '422':
-          description: Stripe error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-
+ 
   /api/v1/movies:
     get:
       summary: List movies

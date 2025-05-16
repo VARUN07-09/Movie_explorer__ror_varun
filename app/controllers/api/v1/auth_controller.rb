@@ -61,18 +61,6 @@ module Api
         end
       end
 
-      def create_stripe_customer
-        begin
-          customer = Stripe::Customer.create(
-            email: @current_user.email,
-            name: @current_user.name
-          )
-          render json: { message: 'Stripe customer created successfully', customer_id: customer.id }, status: :created
-        rescue Stripe::StripeError => e
-          render json: { error: "Stripe error: #{e.message}" }, status: :unprocessable_entity
-        end
-      end
-
       private
 
       def user_params

@@ -14,26 +14,26 @@
       <img src="./assets/0.10.2/loading.gif" alt="loading"/>
     </div>
     <div id="wrapper" style="display:none;">
-      <div class="timestamp">Generated <abbr class="timeago" title="2025-05-16T12:44:00+05:30">2025-05-16T12:44:00+05:30</abbr></div>
+      <div class="timestamp">Generated <abbr class="timeago" title="2025-05-16T15:20:01+05:30">2025-05-16T15:20:01+05:30</abbr></div>
       <ul class="group_tabs"></ul>
 
       <div id="content">
         <div class="file_list_container" id="AllFiles">
   <h2>
     <span class="group_name">All Files</span>
-    (<span class="covered_percent"><span class="red">77.64%</span></span>
+    (<span class="covered_percent"><span class="red">77.06%</span></span>
      covered at
      <span class="covered_strength">
        <span class="green">
-         2.53
+         2.52
        </span>
     </span> hits/line)
   </h2>
   <a name="AllFiles"></a>
   <div>
     <b>6</b> files in total.
-    <b>237</b> relevant lines. 
-    <span class="green"><b>184</b> lines covered</span> and
+    <b>231</b> relevant lines. 
+    <span class="green"><b>178</b> lines covered</span> and
     <span class="red"><b>53</b> lines missed </span>
   </div>
   <table class="file_list">
@@ -52,12 +52,12 @@
       
       <tr>
         <td class="strong"><a href="#3e1377503ef108501ff9b739f004a567a1bd5891" class="src_link" title="app/controllers/api/v1/auth_controller.rb">app/controllers/api/v1/auth_controller.rb</a></td>
-        <td class="yellow strong">84.78 %</td>
-        <td>88</td>
-        <td>46</td>
-        <td>39</td>
+        <td class="yellow strong">82.5 %</td>
+        <td>75</td>
+        <td>40</td>
+        <td>33</td>
         <td>7</td>
-        <td>2.2</td>
+        <td>2.1</td>
       </tr>
       
       <tr>
@@ -119,19 +119,19 @@
           <div class="file_list_container" id="Controllers">
   <h2>
     <span class="group_name">Controllers</span>
-    (<span class="covered_percent"><span class="red">77.47%</span></span>
+    (<span class="covered_percent"><span class="red">76.7%</span></span>
      covered at
      <span class="covered_strength">
        <span class="green">
-         1.96
+         1.93
        </span>
     </span> hits/line)
   </h2>
   <a name="Controllers"></a>
   <div>
     <b>4</b> files in total.
-    <b>182</b> relevant lines. 
-    <span class="green"><b>141</b> lines covered</span> and
+    <b>176</b> relevant lines. 
+    <span class="green"><b>135</b> lines covered</span> and
     <span class="red"><b>41</b> lines missed </span>
   </div>
   <table class="file_list">
@@ -150,12 +150,12 @@
       
       <tr>
         <td class="strong"><a href="#3e1377503ef108501ff9b739f004a567a1bd5891" class="src_link" title="app/controllers/api/v1/auth_controller.rb">app/controllers/api/v1/auth_controller.rb</a></td>
-        <td class="yellow strong">84.78 %</td>
-        <td>88</td>
-        <td>46</td>
-        <td>39</td>
+        <td class="yellow strong">82.5 %</td>
+        <td>75</td>
+        <td>40</td>
+        <td>33</td>
         <td>7</td>
-        <td>2.2</td>
+        <td>2.1</td>
       </tr>
       
       <tr>
@@ -485,10 +485,10 @@
         <div class="source_table" id="3e1377503ef108501ff9b739f004a567a1bd5891">
   <div class="header">
     <h3>app/controllers/api/v1/auth_controller.rb</h3>
-    <h4><span class="yellow">84.78 %</span> covered</h4>
+    <h4><span class="yellow">82.5 %</span> covered</h4>
     <div>
-      <b>46</b> relevant lines. 
-      <span class="green"><b>39</b> lines covered</span> and
+      <b>40</b> relevant lines. 
+      <span class="green"><b>33</b> lines covered</span> and
       <span class="red"><b>7</b> lines missed.</span>
     </div>
   </div>
@@ -781,244 +781,166 @@
         <li class="covered" data-hits="2" data-linenumber="48">
           <span class="hits">2</span>
           
-          <code class="ruby">          token = encode_token(user.id)</code>
-        </li>
-      
-        <li class="covered" data-hits="2" data-linenumber="49">
-          <span class="hits">2</span>
-          
           <code class="ruby">          render json: { user: user.as_json(only: [:id, :name, :email, :role])}, status: :created</code>
         </li>
       
-        <li class="never" data-hits="" data-linenumber="50">
+        <li class="never" data-hits="" data-linenumber="49">
           
           
           <code class="ruby">        else</code>
         </li>
       
-        <li class="covered" data-hits="7" data-linenumber="51">
+        <li class="covered" data-hits="7" data-linenumber="50">
           <span class="hits">7</span>
           
           <code class="ruby">          render json: { errors: user.errors.full_messages }, status: :unprocessable_entity</code>
         </li>
       
-        <li class="never" data-hits="" data-linenumber="52">
+        <li class="never" data-hits="" data-linenumber="51">
           
           
           <code class="ruby">        end</code>
+        </li>
+      
+        <li class="never" data-hits="" data-linenumber="52">
+          
+          
+          <code class="ruby">      end</code>
         </li>
       
         <li class="never" data-hits="" data-linenumber="53">
           
           
-          <code class="ruby">      end</code>
-        </li>
-      
-        <li class="never" data-hits="" data-linenumber="54">
-          
-          
           <code class="ruby"></code>
         </li>
       
-        <li class="covered" data-hits="1" data-linenumber="55">
+        <li class="covered" data-hits="1" data-linenumber="54">
           <span class="hits">1</span>
           
           <code class="ruby">      def login</code>
         </li>
       
-        <li class="covered" data-hits="5" data-linenumber="56">
+        <li class="covered" data-hits="5" data-linenumber="55">
           <span class="hits">5</span>
           
           <code class="ruby">        user = User.find_by(email: params[:auth][:email]&amp;.downcase)</code>
         </li>
       
-        <li class="covered" data-hits="5" data-linenumber="57">
+        <li class="covered" data-hits="5" data-linenumber="56">
           <span class="hits">5</span>
           
           <code class="ruby">        if user&amp;.authenticate(params[:auth][:password])</code>
         </li>
       
-        <li class="covered" data-hits="1" data-linenumber="58">
+        <li class="covered" data-hits="1" data-linenumber="57">
           <span class="hits">1</span>
           
           <code class="ruby">          token = encode_token(user.id)</code>
         </li>
       
-        <li class="covered" data-hits="1" data-linenumber="59">
+        <li class="covered" data-hits="1" data-linenumber="58">
           <span class="hits">1</span>
           
           <code class="ruby">          render json: { user: user.as_json(only: [:id, :name, :email, :role]), token: token }, status: :ok</code>
         </li>
       
-        <li class="never" data-hits="" data-linenumber="60">
+        <li class="never" data-hits="" data-linenumber="59">
           
           
           <code class="ruby">        else</code>
         </li>
       
-        <li class="covered" data-hits="4" data-linenumber="61">
+        <li class="covered" data-hits="4" data-linenumber="60">
           <span class="hits">4</span>
           
           <code class="ruby">          render json: { error: &#39;Invalid email or password&#39; }, status: :unauthorized</code>
         </li>
       
-        <li class="never" data-hits="" data-linenumber="62">
+        <li class="never" data-hits="" data-linenumber="61">
           
           
           <code class="ruby">        end</code>
+        </li>
+      
+        <li class="never" data-hits="" data-linenumber="62">
+          
+          
+          <code class="ruby">      end</code>
         </li>
       
         <li class="never" data-hits="" data-linenumber="63">
           
           
-          <code class="ruby">      end</code>
-        </li>
-      
-        <li class="never" data-hits="" data-linenumber="64">
-          
-          
           <code class="ruby"></code>
         </li>
       
-        <li class="covered" data-hits="1" data-linenumber="65">
-          <span class="hits">1</span>
-          
-          <code class="ruby">      def create_stripe_customer</code>
-        </li>
-      
-        <li class="never" data-hits="" data-linenumber="66">
-          
-          
-          <code class="ruby">        begin</code>
-        </li>
-      
-        <li class="missed" data-hits="0" data-linenumber="67">
-          
-          
-          <code class="ruby">          customer = Stripe::Customer.create(</code>
-        </li>
-      
-        <li class="never" data-hits="" data-linenumber="68">
-          
-          
-          <code class="ruby">            email: @current_user.email,</code>
-        </li>
-      
-        <li class="never" data-hits="" data-linenumber="69">
-          
-          
-          <code class="ruby">            name: @current_user.name</code>
-        </li>
-      
-        <li class="never" data-hits="" data-linenumber="70">
-          
-          
-          <code class="ruby">          )</code>
-        </li>
-      
-        <li class="missed" data-hits="0" data-linenumber="71">
-          
-          
-          <code class="ruby">          render json: { message: &#39;Stripe customer created successfully&#39;, customer_id: customer.id }, status: :created</code>
-        </li>
-      
-        <li class="missed" data-hits="0" data-linenumber="72">
-          
-          
-          <code class="ruby">        rescue Stripe::StripeError =&gt; e</code>
-        </li>
-      
-        <li class="missed" data-hits="0" data-linenumber="73">
-          
-          
-          <code class="ruby">          render json: { error: &quot;Stripe error: #{e.message}&quot; }, status: :unprocessable_entity</code>
-        </li>
-      
-        <li class="never" data-hits="" data-linenumber="74">
-          
-          
-          <code class="ruby">        end</code>
-        </li>
-      
-        <li class="never" data-hits="" data-linenumber="75">
-          
-          
-          <code class="ruby">      end</code>
-        </li>
-      
-        <li class="never" data-hits="" data-linenumber="76">
-          
-          
-          <code class="ruby"></code>
-        </li>
-      
-        <li class="covered" data-hits="1" data-linenumber="77">
+        <li class="covered" data-hits="1" data-linenumber="64">
           <span class="hits">1</span>
           
           <code class="ruby">      private</code>
         </li>
       
-        <li class="never" data-hits="" data-linenumber="78">
+        <li class="never" data-hits="" data-linenumber="65">
           
           
           <code class="ruby"></code>
         </li>
       
-        <li class="covered" data-hits="1" data-linenumber="79">
-          <span class="hits">1</span>
+        <li class="missed" data-hits="0" data-linenumber="66">
+          
           
           <code class="ruby">      def user_params</code>
         </li>
       
-        <li class="covered" data-hits="9" data-linenumber="80">
-          <span class="hits">9</span>
+        <li class="never" data-hits="" data-linenumber="67">
+          
           
           <code class="ruby">        params.require(:user).permit(:name, :email, :password, :password_confirmation)</code>
         </li>
       
-        <li class="never" data-hits="" data-linenumber="81">
+        <li class="never" data-hits="" data-linenumber="68">
           
           
           <code class="ruby">      end</code>
         </li>
       
-        <li class="never" data-hits="" data-linenumber="82">
+        <li class="never" data-hits="" data-linenumber="69">
           
           
           <code class="ruby"></code>
         </li>
       
-        <li class="covered" data-hits="1" data-linenumber="83">
-          <span class="hits">1</span>
+        <li class="missed" data-hits="0" data-linenumber="70">
+          
           
           <code class="ruby">      def encode_token(user_id)</code>
         </li>
       
-        <li class="covered" data-hits="3" data-linenumber="84">
-          <span class="hits">3</span>
+        <li class="missed" data-hits="0" data-linenumber="71">
+          
           
           <code class="ruby">        JWT.encode({ user_id: user_id, exp: 24.hours.from_now.to_i }, Rails.application.credentials.secret_key_base)</code>
         </li>
       
-        <li class="never" data-hits="" data-linenumber="85">
+        <li class="missed" data-hits="0" data-linenumber="72">
           
           
           <code class="ruby">      end</code>
         </li>
       
-        <li class="never" data-hits="" data-linenumber="86">
+        <li class="never" data-hits="" data-linenumber="73">
           
           
           <code class="ruby">    end</code>
         </li>
       
-        <li class="never" data-hits="" data-linenumber="87">
+        <li class="never" data-hits="" data-linenumber="74">
           
           
           <code class="ruby">  end</code>
         </li>
       
-        <li class="never" data-hits="" data-linenumber="88">
+        <li class="never" data-hits="" data-linenumber="75">
           
           
           <code class="ruby">end </code>
@@ -2067,13 +1989,13 @@
         <li class="never" data-hits="" data-linenumber="40">
           
           
-          <code class="ruby">              success_url: &quot;https://movie-explorer-puce-five.vercel.app/success&quot;,</code>
+          <code class="ruby">              success_url: &quot;https://movie-explorer-puce-five.vercel.app/success?session_id={CHECKOUT_SESSION_ID}&quot;,</code>
         </li>
       
         <li class="never" data-hits="" data-linenumber="41">
           
           
-          <code class="ruby">              cancel_url: &quot;http://localhost:3000/api/v1/user_subscriptions/cancel&quot;</code>
+          <code class="ruby">              cancel_url: &quot;https://movie-explorer-puce-five.vercel.app/cancel&quot;</code>
         </li>
       
         <li class="never" data-hits="" data-linenumber="42">

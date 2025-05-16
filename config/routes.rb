@@ -15,8 +15,6 @@ Rails.application.routes.draw do
       get 'user', to: 'auth#show'
       post 'update_profile_picture', to: 'auth#update_profile_picture'
       post 'toggle_notifications', to: 'auth#toggle_notifications'
-      post 'create_stripe_customer', to: 'auth#create_stripe_customer'
-
       # Movies
       resources :movies, only: [:index, :show, :create, :update, :destroy] do
         collection do
