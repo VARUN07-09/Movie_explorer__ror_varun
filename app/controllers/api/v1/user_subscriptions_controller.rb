@@ -15,9 +15,9 @@ module Api
           plan_type = params[:plan_type]
   
           stripe_price_id = {
-            "1-day" => ENV['1_DAY_ID'],
-            "1-month" => ENV['1_MONTH_ID'],
-            "3-months" => ENV['3_MONTHS_ID']
+            "1-day" => ENV['One_DAY_ID'],
+            "1-month" => ENV['One_MONTH_ID'],
+            "3-months" => ENV['Three_MONTHS_ID']
           }[plan_type]
   
           unless stripe_price_id
