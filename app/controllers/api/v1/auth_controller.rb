@@ -45,7 +45,6 @@ module Api
       def signup
         user = User.new(user_params)
         if user.save
-          token = encode_token(user.id)
           render json: { user: user.as_json(only: [:id, :name, :email, :role])}, status: :created
         else
           render json: { errors: user.errors.full_messages }, status: :unprocessable_entity

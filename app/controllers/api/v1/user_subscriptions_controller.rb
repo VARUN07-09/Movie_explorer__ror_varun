@@ -37,8 +37,8 @@ module Api
                 user_id: @current_user.id,
                 plan_type: plan_type
               },
-              success_url: "https://movie-explorer-puce-five.vercel.app/success",
-              cancel_url: "http://localhost:3000/api/v1/user_subscriptions/cancel"
+              success_url: "https://movie-explorer-puce-five.vercel.app/success?session_id={CHECKOUT_SESSION_ID}",
+              cancel_url: "https://movie-explorer-puce-five.vercel.app/cancel"
             )
   
             render json: { session_id: session.id, url: session.url }, status: :ok

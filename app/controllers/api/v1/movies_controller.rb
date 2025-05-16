@@ -111,6 +111,7 @@ module Api
           render json: { error: 'Unauthorized' }, status: :unauthorized
         end
       end
+      
       def send_new_movie_notification(movie)
         users = User.where(notifications_enabled: true).where.not(device_token: nil)
         return if users.empty?

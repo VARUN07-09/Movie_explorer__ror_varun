@@ -8,6 +8,7 @@ require 'rails/all'
 require 'rspec/rails'
 
 require 'simplecov'
+
 SimpleCov.start 'rails' do
   add_filter '/config/'
   add_filter '/db/'

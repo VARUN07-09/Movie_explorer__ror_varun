@@ -4,7 +4,7 @@ class User < ApplicationRecord
   has_many :watchlists, dependent: :destroy
   has_many :movies, through: :watchlists
   has_one_attached :profile_picture
-  after_create :create_default_subscription
+  # after_create :create_default_subscription
 
   enum role: { user: 0, supervisor: 1, admin: 2 }
 

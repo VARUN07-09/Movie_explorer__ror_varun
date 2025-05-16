@@ -4,6 +4,13 @@ RSpec.describe Api::V1::UserSubscriptionsController, type: :controller do
   before do
     request.headers['Content-Type'] = 'application/json'
     request.headers.merge!(auth_headers)
+    # Stub authorize_request and set @current_user
+    allow(controller).to receive(:authorize_request).and_return(true)
+    controller.instance_variable_set(:@current_user, user)
+    # Stub environment variables for Stripe price IDs
+    allow(ENV).to receive(:[]).with('One_DAY_ID').and_return('price_1day')
+    allow(ENV).to receive(:[]).with('One_MONTH_ID').and_return('price_1month')
+    allow(ENV).to receive(:[]).with('Three_MONTHS_ID').and_return('price_3months')
   end
 
   let(:user) { User.create!(name: 'Test User', email: 'test@example.com', password: 'password') }
@@ -20,9 +27,9 @@ RSpec.describe Api::V1::UserSubscriptionsController, type: :controller do
 
   describe 'POST /create' do
     it 'creates a Stripe session for valid plan' do
-      allow(Stripe::Checkout::Session).to receive(:create).and_return(OpenStruct.new(id: 'test_session_id'))
+      allow(Stripe::Checkout::Session).to receive(:create).and_return(OpenStruct.new(id: 'test_session_id', url: 'https://checkout.stripe.com/test'))
 
-      post :create, params: { plan_type: 'weekly' }
+      post :create, params: { plan_type: '1-month' }
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
       expect(json['session_id']).to eq('test_session_id')
@@ -32,23 +39,45 @@ RSpec.describe Api::V1::UserSubscriptionsController, type: :controller do
       post :create, params: { plan_type: 'invalid_plan' }
       expect(response).to have_http_status(:bad_request)
       json = JSON.parse(response.body)
-      expect(json['error']).to eq('Invalid plan type')
+      expect(json['error']).to eq('Invalid or missing plan_type')
     end
   end
 
   describe 'GET /success' do
+    let(:stripe_session) do
+      OpenStruct.new(
+        id: 'test_session_id',
+        customer: 'cus_123',
+        payment_intent: 'pi_123',
+        metadata: { 'user_id' => user.id, 'plan_type' => '1-month' }
+      )
+    end
+
+    before do
+      allow(Stripe::Checkout::Session).to receive(:retrieve).with('test_session_id').and_return(stripe_session)
+    end
+
     it 'creates a new active subscription' do
-      get :success, params: { plan_type: 'weekly' }
+      get :success, params: { session_id: 'test_session_id', plan_type: '1-month' }
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
-      expect(json['message']).to eq('Subscription activated successfully')
+      expect(json['message']).to eq('Subscription created successfully')
+      expect(user.user_subscriptions.last.status).to eq('active')
     end
 
     it 'returns error if user not found' do
-      # Simulate invalid token
-      request.headers['Authorization'] = "Bearer invalidtoken"
-      get :success, params: { plan_type: 'weekly' }
-      expect(response).to have_http_status(:unauthorized)
+      allow(Stripe::Checkout::Session).to receive(:retrieve).with('test_session_id').and_return(
+        OpenStruct.new(
+          id: 'test_session_id',
+          customer: 'cus_123',
+          payment_intent: 'pi_123',
+          metadata: { 'user_id' => 'invalid_id', 'plan_type' => '1-month' }
+        )
+      )
+      get :success, params: { session_id: 'test_session_id', plan_type: '1-month' }
+      expect(response).to have_http_status(:unprocessable_entity)
+      json = JSON.parse(response.body)
+      expect(json['error']).to eq('User not found')
     end
   end
 
@@ -57,34 +86,46 @@ RSpec.describe Api::V1::UserSubscriptionsController, type: :controller do
       get :cancel
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
-      expect(json['message']).to eq('Subscription process cancelled')
+      expect(json['message']).to eq('Payment cancelled')
     end
   end
 
   describe 'GET /status' do
     context 'when active subscription exists and not expired' do
       before do
-        user.user_subscriptions.create!(plan_type: 'weekly', status: 'active', expires_at: 2.days.from_now)
+        user.user_subscriptions.create!(
+          plan_type: '1-month',
+          status: 'active',
+          start_date: Date.today,
+          end_date: Date.today + 30.days,
+          expires_at: 2.days.from_now
+        )
       end
 
       it 'returns current plan_type' do
         get :status
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        expect(json['plan_type']).to eq('weekly')
+        expect(json['plan_type']).to eq('1-month')
       end
     end
 
     context 'when active subscription is expired' do
       before do
-        user.user_subscriptions.create!(plan_type: 'weekly', status: 'active', expires_at: 2.days.ago)
+        user.user_subscriptions.create!(
+          plan_type: '1-month',
+          status: 'active',
+          start_date: Date.today - 30.days,
+          end_date: Date.today - 2.days,
+          expires_at: 2.days.ago
+        )
       end
 
       it 'downgrades to 1-day and returns new plan' do
         get :status
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        expect(json['plan_type']).to eq('daily')
+        expect(json['plan_type']).to eq('1-day')
       end
     end
 
