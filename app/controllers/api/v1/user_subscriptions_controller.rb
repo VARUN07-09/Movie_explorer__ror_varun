@@ -15,9 +15,9 @@ module Api
           plan_type = params[:plan_type]
   
           stripe_price_id = {
-            "1-day" => "price_1RM6yRR60cloYk2YXlHpCByC",
-            "1-month" => "price_1RM70MR60cloYk2YO5iscjxb",
-            "3-months" => "price_1RM71XR60cloYk2YEFk5uoKx"
+            "1-day" => ENV['1_DAY_ID'],
+            "1-month" => ENV['1_MONTH_ID'],
+            "3-months" => ENV['3_MONTHS_ID']
           }[plan_type]
   
           unless stripe_price_id
@@ -37,7 +37,7 @@ module Api
                 user_id: @current_user.id,
                 plan_type: plan_type
               },
-              success_url: "http://localhost:5173/success?session_id={CHECKOUT_SESSION_ID}",
+              success_url: "https://movie-explorer-puce-five.vercel.app/success",
               cancel_url: "http://localhost:3000/api/v1/user_subscriptions/cancel"
             )
   

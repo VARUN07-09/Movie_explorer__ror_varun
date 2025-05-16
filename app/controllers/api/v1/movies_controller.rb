@@ -22,6 +22,7 @@ module Api
           meta: {
             current_page: paginated_movies.current_page,
             total_pages: paginated_movies.total_pages,
+          
             total_count: paginated_movies.total_count
           }
         }, status: :ok

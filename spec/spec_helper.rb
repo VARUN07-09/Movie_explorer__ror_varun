@@ -96,10 +96,3 @@ RSpec.configure do |config|
   Kernel.srand config.seed
 =end
 end
-require 'simplecov'
-SimpleCov.start 'rails' do
-  add_filter '/config/'      # Ignore config files
-  add_filter '/db/'          # Ignore database migrations
-  add_filter '/spec/'        # Ignore test files
-  add_filter '/vendor/'      # Ignore vendor files
-end

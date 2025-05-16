@@ -1,4 +1,3 @@
-# spec/factories/movies.rb
 FactoryBot.define do
   factory :movie do
     sequence(:title) { |n| "Movie #{n}" } # Unique titles: "Movie 1", "Movie 2", etc.
@@ -11,6 +10,5 @@ FactoryBot.define do
     main_lead { "Jane Doe" }
     description { "A sample movie description" }
     premium { false }
-    # Note: poster and banner are handled as attachments in tests, not in the factory
   end
 end

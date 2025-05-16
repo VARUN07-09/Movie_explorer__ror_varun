@@ -29,3 +29,8 @@
 
 en:
   hello: "Hello world"
+en:
+  active_admin:
+    dashboard_welcome:
+      welcome: "Welcome to ActiveAdmin"
+      call_to_action: "Manage your movie database efficiently."

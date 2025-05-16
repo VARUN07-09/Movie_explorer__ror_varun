@@ -7,7 +7,29 @@ require_relative '../config/environment'
 require 'rails/all'
 require 'rspec/rails'
 
-# ... other required configurations
+require 'simplecov'
+SimpleCov.start 'rails' do
+  add_filter '/config/'
+  add_filter '/db/'
+  add_filter '/spec/'
+  add_filter '/vendor/'
+  add_filter '/app/admin/'
+  add_filter '/app/jobs/'
+  add_filter '/app/mailers/'
+  add_filter '/app/channels/'
+  add_filter '/app/helpers/'
+  add_filter '/app/serializers/'
+  add_group 'Controllers', 'app/controllers'
+  # add_group 'Models', 'app/models'
+  add_filter '/app/models'
+  minimum_coverage 80 # Enforce 80% coverage
+  minimum_coverage_by_file 80 # Enforce 80% per file
+end
+
+# Ensure SimpleCov runs before tests
+SimpleCov.command_name 'rspec'
+
+# ... rest of rails_helper.rb remains unchanged
 
 
 # Prevent database truncation if the environment is production
