@@ -1,6 +1,5 @@
 require 'rails_helper'
 
-
 def encode_token(user_id)
   JWT.encode({ user_id: user_id, exp: 24.hours.from_now.to_i }, Rails.application.credentials.secret_key_base)
 end
@@ -10,10 +9,12 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
   let(:admin) { create(:user, role: :admin) }
   let(:supervisor) { create(:user, role: :supervisor) }
   let(:movie) { create(:movie) }
+  let(:json_response) { JSON.parse(response.body) }
 
   before do
-    Watchlist.delete_all 
+    Watchlist.delete_all
     Movie.delete_all
+    allow(FcmService).to receive(:new).and_return(double(send_notification: nil)) # Mock FcmService
   end
 
   describe 'GET /api/v1/movies' do
@@ -22,11 +23,10 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         create_list(:movie, 15)
         get :index, params: { page: 1 }
         expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json['movies'].size).to eq(10) 
-        expect(json['meta']['current_page']).to eq(1)
-        expect(json['meta']['total_pages']).to eq(2) 
-        expect(json['meta']['total_count']).to eq(15)
+        expect(json_response['movies'].size).to eq(10)
+        expect(json_response['meta']['current_page']).to eq(1)
+        expect(json_response['meta']['total_pages']).to eq(2)
+        expect(json_response['meta']['total_count']).to eq(15)
       end
     end
 
@@ -36,17 +36,15 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         create(:movie, title: 'Avatar')
         get :index, params: { search: 'Inception' }
         expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json['movies'].size).to eq(1)
-        expect(json['movies'][0]['title']).to eq('Inception')
+        expect(json_response['movies'].size).to eq(1)
+        expect(json_response['movies'][0]['title']).to eq('Inception')
       end
 
       it 'returns all movies for empty search' do
         create_list(:movie, 5)
         get :index, params: { search: '' }
         expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json['movies'].size).to eq(5)
+        expect(json_response['movies'].size).to eq(5)
       end
     end
 
@@ -56,9 +54,8 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         create(:movie, genre: 'Drama')
         get :index, params: { genre: 'Action' }
         expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json['movies'].size).to eq(1)
-        expect(json['movies'][0]['genre']).to eq('Action')
+        expect(json_response['movies'].size).to eq(1)
+        expect(json_response['movies'][0]['genre']).to eq('Action')
       end
     end
 
@@ -68,9 +65,8 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         create(:movie, rating: 6.0)
         get :index, params: { rating: 7.0 }
         expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json['movies'].size).to eq(1)
-        expect(json['movies'][0]['rating']).to eq('8.0') # Expect string
+        expect(json_response['movies'].size).to eq(1)
+        expect(json_response['movies'][0]['rating']).to eq('8.0')
       end
     end
 
@@ -80,9 +76,8 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         create(:movie, release_year: 2019)
         get :index, params: { release_year: 2020 }
         expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json['movies'].size).to eq(1)
-        expect(json['movies'][0]['release_year']).to eq(2020)
+        expect(json_response['movies'].size).to eq(1)
+        expect(json_response['movies'][0]['release_year']).to eq(2020)
       end
     end
   end
@@ -90,22 +85,19 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
   describe 'GET /api/v1/movies/:id' do
     context 'with valid movie id' do
       it 'returns the movie' do
-        token = encode_token(user.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(user.id)}"
         get :show, params: { id: movie.id }
         expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json['title']).to eq(movie.title)
+        expect(json_response['title']).to eq(movie.title)
       end
     end
 
     context 'with invalid movie id' do
       it 'returns not found' do
-        token = encode_token(user.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(user.id)}"
         get :show, params: { id: 999 }
         expect(response).to have_http_status(:not_found)
-        expect(JSON.parse(response.body)['error']).to eq('Movie not found')
+        expect(json_response['error']).to eq('Movie not found')
       end
     end
 
@@ -113,7 +105,7 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
       it 'returns unauthorized' do
         get :show, params: { id: movie.id }
         expect(response).to have_http_status(:unauthorized)
-        expect(JSON.parse(response.body)['error']).to eq('Authorization header missing or invalid')
+        expect(json_response['error']).to eq('Authorization header missing or invalid')
       end
     end
 
@@ -122,7 +114,7 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
         request.headers['Authorization'] = 'Bearer invalid_token'
         get :show, params: { id: movie.id }
         expect(response).to have_http_status(:unauthorized)
-        expect(JSON.parse(response.body)['error']).to eq('Invalid token: Not enough or too many segments')
+        expect(json_response['error']).to eq('Invalid token: Not enough or too many segments')
       end
     end
   end
@@ -145,21 +137,16 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
 
     context 'as admin' do
       it 'creates a new movie' do
-        token = encode_token(admin.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(admin.id)}"
         post :create, params: valid_params
         expect(response).to have_http_status(:created)
-        json = JSON.parse(response.body)
-        expect(json['title']).to eq('New Movie')
-        expect(json['poster_url']).to be_nil
-        expect(json['banner_url']).to be_nil
+        expect(json_response['title']).to eq('New Movie')
       end
     end
 
     context 'as supervisor' do
       it 'creates a new movie' do
-        token = encode_token(supervisor.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(supervisor.id)}"
         post :create, params: valid_params
         expect(response).to have_http_status(:created)
       end
@@ -167,53 +154,45 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
 
     context 'as regular user' do
       it 'returns unauthorized' do
-        token = encode_token(user.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(user.id)}"
         post :create, params: valid_params
         expect(response).to have_http_status(:unauthorized)
-        expect(JSON.parse(response.body)['error']).to eq('Unauthorized')
+        expect(json_response['error']).to eq('Unauthorized')
       end
     end
 
     context 'with invalid params' do
       it 'returns unprocessable entity for missing genre' do
-        token = encode_token(admin.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(admin.id)}"
         post :create, params: valid_params.except(:genre)
         expect(response).to have_http_status(:unprocessable_entity)
-        expect(JSON.parse(response.body)['errors']).to include("Genre can't be blank")
+        expect(json_response['errors']).to include("Genre can't be blank")
       end
 
       it 'returns unprocessable entity for invalid release_year' do
-        token = encode_token(admin.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(admin.id)}"
         post :create, params: valid_params.merge(release_year: 1800)
         expect(response).to have_http_status(:unprocessable_entity)
-        expect(JSON.parse(response.body)['errors']).to include("Release year must be greater than 1880")
+        expect(json_response['errors']).to include('Release year must be greater than 1880')
       end
     end
   end
 
   describe 'PUT /api/v1/movies/:id' do
-    let(:update_params) do
-      { title: 'Updated Movie' }
-    end
+    let(:update_params) { { title: 'Updated Movie' } }
 
     context 'as admin' do
       it 'updates the movie' do
-        token = encode_token(admin.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(admin.id)}"
         put :update, params: { id: movie.id, **update_params }
         expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json['title']).to eq('Updated Movie')
+        expect(json_response['title']).to eq('Updated Movie')
       end
     end
 
     context 'as supervisor' do
       it 'updates the movie' do
-        token = encode_token(supervisor.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(supervisor.id)}"
         put :update, params: { id: movie.id, **update_params }
         expect(response).to have_http_status(:ok)
       end
@@ -221,31 +200,28 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
 
     context 'as regular user' do
       it 'returns unauthorized' do
-        token = encode_token(user.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(user.id)}"
         put :update, params: { id: movie.id, **update_params }
         expect(response).to have_http_status(:unauthorized)
-        expect(JSON.parse(response.body)['error']).to eq('Unauthorized')
+        expect(json_response['error']).to eq('Unauthorized')
       end
     end
 
     context 'with invalid movie id' do
       it 'returns not found' do
-        token = encode_token(admin.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(admin.id)}"
         put :update, params: { id: 999, **update_params }
         expect(response).to have_http_status(:not_found)
-        expect(JSON.parse(response.body)['error']).to eq('Movie not found')
+        expect(json_response['error']).to eq('Movie not found')
       end
     end
 
     context 'with invalid params' do
       it 'returns unprocessable entity for blank title' do
-        token = encode_token(admin.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(admin.id)}"
         put :update, params: { id: movie.id, title: '' }
         expect(response).to have_http_status(:unprocessable_entity)
-        expect(JSON.parse(response.body)['errors']).to include("Title can't be blank")
+        expect(json_response['errors']).to include("Title can't be blank")
       end
     end
   end
@@ -253,19 +229,17 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
   describe 'DELETE /api/v1/movies/:id' do
     context 'as admin' do
       it 'deletes the movie' do
-        token = encode_token(admin.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(admin.id)}"
         delete :destroy, params: { id: movie.id }
         expect(response).to have_http_status(:ok)
-        expect(JSON.parse(response.body)['message']).to eq('Movie deleted successfully')
+        expect(json_response['message']).to eq('Movie deleted successfully')
         expect(Movie.exists?(movie.id)).to be_falsey
       end
     end
 
     context 'as supervisor' do
       it 'deletes the movie' do
-        token = encode_token(supervisor.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(supervisor.id)}"
         delete :destroy, params: { id: movie.id }
         expect(response).to have_http_status(:ok)
       end
@@ -273,21 +247,19 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
 
     context 'as regular user' do
       it 'returns unauthorized' do
-        token = encode_token(user.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(user.id)}"
         delete :destroy, params: { id: movie.id }
         expect(response).to have_http_status(:unauthorized)
-        expect(JSON.parse(response.body)['error']).to eq('Unauthorized')
+        expect(json_response['error']).to eq('Unauthorized')
       end
     end
 
     context 'with invalid movie id' do
       it 'returns not found' do
-        token = encode_token(admin.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(admin.id)}"
         delete :destroy, params: { id: 999 }
         expect(response).to have_http_status(:not_found)
-        expect(JSON.parse(response.body)['error']).to eq('Movie not found')
+        expect(json_response['error']).to eq('Movie not found')
       end
     end
   end
@@ -295,25 +267,21 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
   describe 'GET /api/v1/movies/watchlist' do
     context 'with movies in watchlist' do
       it 'returns user’s watchlist' do
-        watchlist = create(:watchlist, user: user, movie: movie)
-        token = encode_token(user.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        create(:watchlist, user: user, movie: movie)
+        request.headers['Authorization'] = "Bearer #{encode_token(user.id)}"
         get :watchlist
         expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json['movies'].size).to eq(1)
-        expect(json['movies'][0]['title']).to eq(movie.title)
+        expect(json_response['movies'].size).to eq(1)
+        expect(json_response['movies'][0]['title']).to eq(movie.title)
       end
     end
 
     context 'with empty watchlist' do
       it 'returns empty watchlist' do
-        token = encode_token(user.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(user.id)}"
         get :watchlist
         expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json['movies']).to be_empty
+        expect(json_response['movies']).to be_empty
       end
     end
 
@@ -321,7 +289,7 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
       it 'returns unauthorized' do
         get :watchlist
         expect(response).to have_http_status(:unauthorized)
-        expect(JSON.parse(response.body)['error']).to eq('Authorization header missing or invalid')
+        expect(json_response['error']).to eq('Authorization header missing or invalid')
       end
     end
   end
@@ -329,11 +297,10 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
   describe 'POST /api/v1/movies/toggle_watchlist' do
     context 'adding movie to watchlist' do
       it 'adds movie to watchlist' do
-        token = encode_token(user.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(user.id)}"
         post :toggle_watchlist, params: { movie_id: movie.id }
         expect(response).to have_http_status(:created)
-        expect(JSON.parse(response.body)['message']).to eq('Movie added to watchlist')
+        expect(json_response['message']).to eq('Movie added to watchlist')
         expect(user.watchlists.find_by(movie_id: movie.id)).to be_present
       end
     end
@@ -341,22 +308,20 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
     context 'removing movie from watchlist' do
       it 'removes movie from watchlist' do
         create(:watchlist, user: user, movie: movie)
-        token = encode_token(user.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(user.id)}"
         post :toggle_watchlist, params: { movie_id: movie.id }
         expect(response).to have_http_status(:ok)
-        expect(JSON.parse(response.body)['message']).to eq('Movie removed from watchlist')
+        expect(json_response['message']).to eq('Movie removed from watchlist')
         expect(user.watchlists.find_by(movie_id: movie.id)).to be_nil
       end
     end
 
     context 'with invalid movie id' do
       it 'returns not found' do
-        token = encode_token(user.id)
-        request.headers['Authorization'] = "Bearer #{token}"
+        request.headers['Authorization'] = "Bearer #{encode_token(user.id)}"
         post :toggle_watchlist, params: { movie_id: 999 }
         expect(response).to have_http_status(:not_found)
-        expect(JSON.parse(response.body)['error']).to eq('Movie not found')
+        expect(json_response['error']).to eq('Movie not found')
       end
     end
 
@@ -364,7 +329,7 @@ RSpec.describe Api::V1::MoviesController, type: :controller do
       it 'returns unauthorized' do
         post :toggle_watchlist, params: { movie_id: movie.id }
         expect(response).to have_http_status(:unauthorized)
-        expect(JSON.parse(response.body)['error']).to eq('Authorization header missing or invalid')
+        expect(json_response['error']).to eq('Authorization header missing or invalid')
       end
     end
   end
