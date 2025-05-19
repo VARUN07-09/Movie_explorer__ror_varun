@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_05_09_065510) do
+ActiveRecord::Schema[7.1].define(version: 2025_05_19_042732) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -123,6 +123,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_05_09_065510) do
     t.boolean "notify_on_new_movie"
     t.string "device_token"
     t.boolean "notifications_enabled"
+    t.string "stripe_customer_id"
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
